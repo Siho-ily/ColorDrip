@@ -1,8 +1,9 @@
 {
+  "name": "colordrip",
+  "version": "0.0.1",
   "dependencies": {
     "chroma-js": "^3.2.0",
     "matter-js": "^0.20.0",
-    "motion": "^12.38.0",
-    "motion-studio": "https://api.motion.dev/registry.tgz?package=motion-studio&version=4.1.1&token=ae44a86759c75c6eb89cc5f6e722d3e4e7b8651534a3bdf6b3e4cf534cb74106"
+    "motion": "^12.38.0"
   }
 }
