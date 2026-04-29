@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# 에디터
+.vscode/
+.idea/
+
+# 의존성
+node_modules/
+
+# 환경변수
+.env
+.env.local

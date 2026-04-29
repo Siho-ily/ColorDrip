@@ -1,0 +1,9 @@
+{
+  "name": "colordrip",
+  "version": "0.0.1",
+  "dependencies": {
+    "chroma-js": "^3.2.0",
+    "matter-js": "^0.20.0",
+    "motion": "^12.38.0"
+  }
+}
