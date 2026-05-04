@@ -1,5 +1,5 @@
 feat:
-    - head-branch: ["^feat/"]
+    - head-branch: ["^feat/", "^feature/"]
 
 fix:
     - head-branch: ["^fix/"]
