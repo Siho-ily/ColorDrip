@@ -6,32 +6,37 @@
 ColorDrip/
 ├── index.html
 ├── package.json
-├── vite.config.js
-├── CLAUDE.md
+├── vite.config.js         ← Tailwind v4 플러그인, @ alias(src/)
+├── jsconfig.json          ← @ alias 타입 지원
+├── components.json        ← shadcn/ui 설정
+├── docs/
 │
-├── styles/
-│   ├── reset.css          ← Meyer reset (수정 금지)
-│   └── global.css         ← 폰트, html/body, #App 레이아웃
-│
-└── scripts/
-    ├── main.js            ← 진입점, App 마운트
-    ├── app.js             ← 루트 컴포넌트, 자식 조립
-    └── components/
-        ├── global/        ← 앱 전역 공유 요소
-        │   ├── ui/        ← 가장 작은 재사용 시각 요소
-        │   └── layout/    ← TopBar, BottomBar
-        ├── canvas/        ← 메인 캔버스 도메인
-        │   ├── ui/        ← Drop, Blob (개별 시각 요소)
-        │   ├── layout/    ← Canvas, RainLayer, BlobLayer
-        │   └── feature/   ← ColorWheelPicker
-        ├── palette/       ← 팔레트 도메인
-        │   ├── ui/        ← PaletteSlot, ColorSwatch
-        │   ├── layout/    ← PaletteSidebar, PresetTabs
-        │   └── feature/   ← ExportActions
-        └── settings/      ← 설정 도메인
-            ├── ui/        ← Toggle, Slider
-            ├── layout/    ← SettingsPanel
-            └── feature/
+└── src/
+    ├── app/
+    │   ├── main.js        ← 진입점: CSS import, App 마운트
+    │   ├── app.js         ← 루트 컴포넌트, 자식 조립
+    │   ├── reset.css      ← Meyer reset (수정 금지)
+    │   └── globals.css    ← Tailwind, shadcn CSS 변수, 폰트
+    │
+    ├── components/
+    │   ├── global/        ← 앱 전역 공유 요소
+    │   │   ├── ui/        ← shadcn 프리미티브 (JSX) + 가장 작은 시각 요소
+    │   │   └── layout/    ← TopBar, BottomBar
+    │   ├── canvas/        ← 메인 캔버스 도메인
+    │   │   ├── ui/        ← Drop, Blob (개별 시각 요소)
+    │   │   ├── layout/    ← Canvas, RainLayer, BlobLayer
+    │   │   └── feature/   ← ColorWheelPicker
+    │   ├── palette/       ← 팔레트 도메인
+    │   │   ├── ui/        ← PaletteSlot, ColorSwatch
+    │   │   ├── layout/    ← PaletteSidebar, PresetTabs
+    │   │   └── feature/   ← ExportActions
+    │   └── settings/      ← 설정 도메인
+    │       ├── ui/        ← Toggle, Slider
+    │       ├── layout/    ← SettingsPanel
+    │       └── feature/
+    │
+    └── lib/
+        └── utils.js       ← cn() 유틸 (Tailwind 클래스 병합)
 ```
 
 ## 컴포넌트 폴더 규칙

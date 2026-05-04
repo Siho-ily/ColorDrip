@@ -34,10 +34,19 @@ export const IconButton = ($target, { icon, onClick }) => {
 ```
 
 ```css
-/* IconButton.css */
+/* IconButton.css — Tailwind 유틸로 충분하지 않을 때만 작성 */
 .icon-button {
     /* ... */
 }
+```
+
+shadcn/ui 프리미티브(Button 등)는 JSX 컴포넌트로 `@/components/global/ui/`에 위치한다. 바닐라 JS 컴포넌트에서 shadcn 버튼의 클래스만 빌려 쓸 수 있다:
+
+```js
+import { buttonVariants } from "@/components/global/ui/button.jsx";
+
+const $btn = document.createElement("button");
+$btn.className = buttonVariants({ variant: "outline" });
 ```
 
 ---
@@ -48,7 +57,7 @@ ui 컴포넌트를 조합해 구조적 배치. 도메인 로직 없음.
 
 ```js
 // TopBar.js
-import "@/styles/components/global/layout/TopBar/TopBar.css";
+import "./TopBar.css";
 import { IconButton } from "@/components/global/ui/IconButton/IconButton.js";
 
 export const TopBar = ($target) => {
@@ -99,7 +108,7 @@ import "./TopBar.css";  // 첫 줄에 선언
 ```
 
 컴포넌트별 CSS는 해당 컴포넌트 폴더 안에만 작성.
-전역 스타일(폰트, 색상 토큰, 레이아웃 기준)은 `styles/global.css`.
+전역 스타일(폰트, 색상 토큰, 레이아웃 기준)은 `src/app/globals.css`.
 
 ---
 
@@ -107,7 +116,7 @@ import "./TopBar.css";  // 첫 줄에 선언
 
 ```js
 // app.js
-import "@/styles/global.css";  // Vite에서 전역 CSS도 JS에서 import 가능
+// CSS는 main.js에서 import됨 — app.js에서 다시 import 불필요
 import { TopBar } from "@/components/global/layout/TopBar/TopBar.js";
 import { Canvas } from "@/components/canvas/layout/Canvas/Canvas.js";
 import { BottomBar } from "@/components/global/layout/BottomBar/BottomBar.js";
