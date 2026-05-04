@@ -13,4 +13,5 @@ node_modules/
 .env.local
 
 # claude
+.claude
 CLAUDE.md

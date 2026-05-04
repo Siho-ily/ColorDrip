@@ -1,0 +1,55 @@
+{
+  "name": "colordrip",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
+    "@tailwindcss/vite": "^4.2.4",
+    "chroma-js": "^3.2.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "detect-libc": "^2.1.2",
+    "fdir": "^6.5.0",
+    "lightningcss": "^1.32.0",
+    "lightningcss-darwin-arm64": "^1.32.0",
+    "lucide-react": "^1.14.0",
+    "matter-js": "^0.20.0",
+    "motion": "^12.38.0",
+    "nanoid": "^3.3.12",
+    "picocolors": "^1.1.1",
+    "picomatch": "^4.0.4",
+    "postcss": "^8.5.13",
+    "radix-ui": "^1.4.3",
+    "rolldown": "^1.0.0-rc.17",
+    "shadcn": "^4.6.0",
+    "source-map-js": "^1.2.1",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.4",
+    "tinyglobby": "^0.2.16",
+    "tw-animate-css": "^1.4.0"
+  },
+  "devDependencies": {
+    "vite": "^8.0.10"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Siho-ily/ColorDrip.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Siho-ily/ColorDrip/issues"
+  },
+  "homepage": "https://github.com/Siho-ily/ColorDrip#readme"
+}
