@@ -6,6 +6,8 @@ on:
             - "dev"
 jobs:
     auto-pr:
+        permissions:
+            pull-requests: write
         runs-on: ubuntu-latest
         steps:
             - name: Create PR to dev
