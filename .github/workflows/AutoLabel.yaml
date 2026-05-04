@@ -1,0 +1,11 @@
+name: AutoLabel
+on:
+    pull_request:
+        types: [opened]
+jobs:
+    label:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/labeler@v5
+              with:
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}

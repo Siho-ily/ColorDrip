@@ -1,0 +1,17 @@
+feat:
+    - head-branch: ["^feat/"]
+
+fix:
+    - head-branch: ["^fix/"]
+
+chore:
+    - head-branch: ["^chore/"]
+
+docs:
+    - head-branch: ["^docs/"]
+
+refactor:
+    - head-branch: ["^refactor/"]
+
+style:
+    - head-branch: ["^style/"]
