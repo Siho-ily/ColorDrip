@@ -1,6 +1,6 @@
 import { App } from "./app.js";
-import "@/styles/reset.css";
-import "@/styles/global.css";
+import "@/app/reset.css";
+import "@/app/globals.css";
 
 const $app = document.getElementById("App");
 
