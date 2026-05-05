@@ -1,6 +1,6 @@
-import { BackgroundLayer, Canvas, Palette } from "@/components/index";
-import type { State } from "@/types/state";
-import initialState from "@/data/state";
+import { BackgroundLayer, Canvas, Palette } from '@/components/index';
+import type { State } from '@/types/state';
+import initialState from '@/data/state';
 
 export default class App {
     private state: State;
@@ -12,11 +12,18 @@ export default class App {
         this.state = { ...initialState };
 
         this.backgroundLayer = new BackgroundLayer({ $target: $app });
-        this.canvas = new Canvas({ $target: $app, initState: initialState });
+        this.canvas = new Canvas({
+            $target: $app,
+            initState: initialState,
+            onBubbleCatch: (bubble) => {
+                // catch된 bubble을 state에 추가 — 이후 BubbleLayer가 DOM으로 렌더링
+                this.setState({ bubbles: [...this.state.bubbles, bubble] });
+            },
+        });
         this.palette = new Palette({
             $target: $app,
             onBubbleCreate: (_color) => {
-                // 팔레트 항목 클릭 → canvas에 blob 생성
+                // 팔레트 항목 클릭 → canvas에 bubble 생성
             },
         });
 
