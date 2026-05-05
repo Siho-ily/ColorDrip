@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import tailwindcss from '@tailwindcss/vite'
-import path from 'path'
+import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
 
 export default defineConfig({
     plugins: [
@@ -9,7 +9,6 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
-            
         },
     },
     server: {
@@ -21,4 +20,4 @@ export default defineConfig({
         assetsDir: 'assets',
         emptyOutDir: true,
     },
-})
+});
