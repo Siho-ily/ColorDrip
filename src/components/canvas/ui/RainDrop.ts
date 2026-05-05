@@ -5,17 +5,18 @@ function hslToCss({ h, s, l }: HslColor) {
     return `hsl(${h}, ${s}%, ${l}%)`;
 }
 
+/** Matter.js body 하나와 그 시각 표현을 함께 관리하는 빗방울 단위 컴포넌트 */
 export default class RainDrop {
-    readonly body: Matter.Body;
-    readonly color: HslColor;
+    readonly body: Matter.Body;     // Matter.js 물리 body — RainCanvas가 world에 추가
+    readonly color: HslColor;       // 빗방울 색상 — catch 시 Bubble로 전달됨
 
     constructor({
         x,
         y,
         radius,
         color,
-        gravityScale,
-        windX,
+        gravityScale,   // speed 설정값 기반. 높을수록 빠르게 낙하
+        windX,          // 수평 초기 속도. 사선 낙하 효과
     }: {
         x: number;
         y: number;
@@ -35,16 +36,22 @@ export default class RainDrop {
         // gravityScale은 IBodyDefinition 타입에 없으므로 생성 후 직접 할당
         (this.body as Matter.Body & { gravityScale: number }).gravityScale = gravityScale;
 
+        // 수평 속도만 부여 — 수직은 중력이 담당
         Matter.Body.setVelocity(this.body, { x: windX, y: 0 });
     }
 
+    /** 물리 body의 실제 반지름. Matter.js 내부 프로퍼티를 타입 캐스팅으로 읽음 */
     get radius() {
         return (this.body as Matter.Body & { circleRadius: number }).circleRadius;
     }
 
     /**
-     * 진행 방향을 향한 정삼각형을 그린다.
-     * RainCanvas의 afterRender 이벤트에서 호출된다.
+     * 진행 방향을 향한 정삼각형을 canvas에 그린다.
+     * RainCanvas의 afterRender 이벤트에서 매 프레임 호출된다.
+     *
+     * 속도 벡터(vx, vy)로 회전각을 계산해 꼭짓점이 낙하 방향을 가리키도록 한다.
+     * - Math.atan2(vy, vx): 속도 벡터의 각도
+     * - - Math.PI / 2: 기본 좌표계(위쪽이 0)에서 진행 방향으로 정렬하기 위한 보정
      */
     draw(ctx: CanvasRenderingContext2D) {
         const { x, y } = this.body.position;
@@ -56,6 +63,7 @@ export default class RainDrop {
         ctx.translate(x, y);
         ctx.rotate(angle);
 
+        // 정삼각형: 외접원 반지름 r 기준으로 꼭짓점 3개 계산
         ctx.beginPath();
         ctx.moveTo(0, -r);
         ctx.lineTo(r * Math.sin(2 * Math.PI / 3), -r * Math.cos(2 * Math.PI / 3));
