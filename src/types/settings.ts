@@ -1,6 +1,6 @@
 export interface RainSettings {
-    speed: number;              // 방울 낙하 속도 (1–20)
-    density: number;            // 방울 생성 빈도 (1–20)
+    speed: number;      // 방울 낙하 속도 (1–20)
+    density: number;    // 방울 생성 빈도 (1–20)
 }
 
 /**
@@ -21,6 +21,6 @@ export type ColorSpace = 'rgb' | 'hsl' | 'hsv' | 'hsi' | 'lab' | 'lch' | 'oklch'
 
 export interface Settings {
     colorSpace: ColorSpace;     // 색상 혼합에 사용할 색 공간
-    showHexAlways: boolean;
-    rain: RainSettings;
+    showHexAlways: boolean;     // 버블에 hex 코드를 항상 표시할지 여부
+    rain: RainSettings;         // 비 관련 세부 설정
 }
