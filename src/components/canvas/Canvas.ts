@@ -1,10 +1,10 @@
 import type { State } from "@/types/state";
 import RainCanvas from './ui/RainCanvas';
-import BlobLayer from './ui/BlobLayer';
+import BubbleLayer from './ui/BubbleLayer';
 
 export default class Canvas {
     private rainCanvas: RainCanvas;
-    private blobLayer: BlobLayer;
+    private bubbleLayer: BubbleLayer;
     state?: State;
 
     constructor({ $target }: { $target: HTMLElement }) {
@@ -13,12 +13,12 @@ export default class Canvas {
         $target.appendChild($el);
 
         this.rainCanvas = new RainCanvas({ $target: $el });
-        this.blobLayer = new BlobLayer({ $target: $el });
+        this.bubbleLayer = new BubbleLayer({ $target: $el });
     }
 
     setState(nextState: State) {
         this.state = nextState;
         this.rainCanvas.setState(nextState);
-        this.blobLayer.setState(nextState);
+        this.bubbleLayer.setState(nextState);
     }
 }

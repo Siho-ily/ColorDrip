@@ -15,7 +15,7 @@ export default class App {
         this.canvas = new Canvas({ $target: $app });
         this.palette = new Palette({
             $target: $app,
-            onBlobCreate: (_color) => {
+            onBubbleCreate: (_color) => {
                 // 팔레트 항목 클릭 → canvas에 blob 생성
             },
         });

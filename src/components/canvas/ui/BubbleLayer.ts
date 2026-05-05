@@ -1,6 +1,6 @@
 import type { State } from "@/types/state";
 
-export default class BlobLayer {
+export default class BubbleLayer {
     private $el: HTMLDivElement;
     state?: State;
 
@@ -12,6 +12,6 @@ export default class BlobLayer {
 
     setState(nextState: State) {
         this.state = nextState;
-        // blobs[] 동기화
+        // bubbles[] 동기화
     }
 }
