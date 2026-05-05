@@ -1,10 +1,11 @@
 import '@/app/reset.css';
 import '@/app/globals.css';
-import BackgroundLayer from '@/components/BackgroundLayer/BackgroundLayer.js';
+import BackgroundLayer from '@/components/BackgroundLayer/BackgroundLayer';
+import initialState from '@/data/state';
 
-const $app = document.getElementById('App');
+const $app = document.getElementById('App') as HTMLElement;
 const bg = new BackgroundLayer({ $target: $app });
-bg.setState({});
+bg.setState(initialState);
 
 // Controls
 const $panel = document.createElement('div');
