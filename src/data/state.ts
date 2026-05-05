@@ -14,8 +14,7 @@ const initialState: State = {
     },
     selectedBubbleIds: [],
     settings: {
-        colorSpace: 'HSL',
-        mixInOKLCH: true,
+        colorSpace: 'hsl',
         showHexAlways: false,
         rain: { speed: 10, density: 10 },
     },

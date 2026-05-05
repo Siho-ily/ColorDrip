@@ -19,7 +19,7 @@ export interface State {
     bubbles: Bubble[];
     palette: PaletteState;
     picker: PickerState;
-    selectedBubbleIds: string[]; // 다중 선택된 버블 id 목록
+    selectedBubbleIds: number[]; // 다중 선택된 버블 id 목록
     settings: Settings;
     ui: {
         visible: boolean;        // TopBar/BottomBar 표시 여부
