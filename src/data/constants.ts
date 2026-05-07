@@ -3,8 +3,8 @@
 /** Matter.js 엔진 기본 중력. scale은 Matter.js 내부 단위 */
 export const GRAVITY = { x: 0, y: 1, scale: 0.0005 };
 
-/** 방울 수평 초기 속도 (px/frame). 양수 = 오른쪽 방향 */
-export const WIND_X = 2.5;
+/** 방울 클릭 히트 영역 여유 (px). 중심 거리 기반 판정에 더해 체감 클릭률을 높임 */
+export const TOLERANCE = 15;
 
 /**
  * 방울 반지름 계산식: base = RADIUS_BASE + size × RADIUS_FACTOR

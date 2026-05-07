@@ -16,7 +16,7 @@ const initialState: State = {
     settings: {
         colorSpace: 'hsl',
         showHexAlways: false,
-        rain: { speed: 10, density: 10, size: 10, tolerance: 15 },
+        rain: { speed: 10, density: 10, size: 10, wind: 2.5 },
     },
     ui: {
         visible: false,

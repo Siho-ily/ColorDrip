@@ -2,7 +2,7 @@ export interface RainSettings {
     speed: number;      // 방울 낙하 속도 (1–20)
     density: number;    // 방울 생성 빈도 (1–20)
     size: number;       // 방울 크기 (1–20)
-    tolerance: number;  // 방울 클릭 추가 범위 (px)
+    wind: number;       // 바람 수평 속도 (px/frame). 양수 = 오른쪽, 음수 = 왼쪽
 }
 
 /**

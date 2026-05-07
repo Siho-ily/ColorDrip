@@ -4,7 +4,7 @@ import type { Bubble, HslColor } from '@/types/bubble';
 import RainDrop from '../ui/RainDrop';
 import {
     GRAVITY,
-    WIND_X,
+    TOLERANCE,
     RADIUS_BASE,
     RADIUS_FACTOR,
     RADIUS_JITTER,
@@ -85,7 +85,6 @@ export default class RainCanvas {
 
             // Query.point는 body 경계를 정확히 검사해 체감 클릭 영역이 좁다.
             // 중심 거리 기반으로 직접 검사하고 tolerance를 더해 클릭 인식률을 높인다.
-            const TOLERANCE = this.state.settings.rain.tolerance;
             const hit = Composite.allBodies(this.engine.world)
                 .filter(b => !b.isStatic)
                 .find(b => {
@@ -175,7 +174,7 @@ export default class RainCanvas {
                 radius,
                 color: randomHsl(),
                 gravityScale: this.state.settings.rain.speed / 10,
-                windX: WIND_X,
+                windX: this.state.settings.rain.wind,
             });
 
             this.drops.set(drop.body.id, drop);
