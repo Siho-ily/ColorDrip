@@ -3,7 +3,7 @@ import type { State } from '@/types/state';
 import type { Bubble, HslColor } from '@/types/bubble';
 import RainDrop from '../ui/RainDrop';
 
-const { Engine, Render, Runner, Composite, Query, World, Events } = Matter;
+const { Engine, Render, Runner, Composite, World, Events } = Matter;
 
 // 수평 초기 속도 — 모든 방울에 동일하게 적용해 바람 방향을 표현
 const WIND_X = 2.5;
@@ -48,7 +48,7 @@ export default class RainCanvas {
         const width = $target.clientWidth;
         const height = $target.clientHeight;
 
-        this.engine = Engine.create();
+        this.engine = Engine.create({ gravity: { x: 0, y: 1, scale: 0.0005 } });
 
         // wireframes 끄고 배경 투명 — BackgroundLayer가 배경을 담당
         this.render = Render.create({
@@ -65,11 +65,23 @@ export default class RainCanvas {
             this.drops.forEach(drop => drop.draw(ctx));
         });
 
-        // 클릭 위치에 있는 body를 Bubble로 변환해 상위로 전달
-        this.render.canvas.addEventListener('click', (e: MouseEvent) => {
+        // pointerdown을 써야 click(mouseup 기준)보다 100–200ms 빠르게 감지된다.
+        // click 이벤트를 쓰면 그 사이에 body가 아래로 이동해 시각 위치와 physics 위치가 어긋난다.
+        this.render.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
             const point = { x: e.offsetX, y: e.offsetY };
-            const hit = Query.point(Composite.allBodies(this.engine.world), point)
-                .find(b => !b.isStatic);
+
+            // Query.point는 body 경계를 정확히 검사해 체감 클릭 영역이 좁다.
+            // 중심 거리 기반으로 직접 검사하고 tolerance를 더해 클릭 인식률을 높인다.
+            const TOLERANCE = 20;
+            const hit = Composite.allBodies(this.engine.world)
+                .filter(b => !b.isStatic)
+                .find(b => {
+                    const drop = this.drops.get(b.id);
+                    if (!drop) return false;
+                    const dx = b.position.x - point.x;
+                    const dy = b.position.y - point.y;
+                    return dx * dx + dy * dy <= (drop.radius + TOLERANCE) ** 2;
+                });
             if (!hit) return;
 
             const drop = this.drops.get(hit.id);
@@ -86,6 +98,11 @@ export default class RainCanvas {
             };
 
             this.onBubbleCatch(bubble);
+
+            // body를 world에서 제거해 물리 루프에서 완전히 분리하고,
+            // drops 맵에서도 삭제해 cleanupInterval과 afterRender에서 참조되지 않도록 한다
+            World.remove(this.engine.world, hit);
+            this.drops.delete(hit.id);
         });
 
         Render.run(this.render);
@@ -99,12 +116,17 @@ export default class RainCanvas {
 
         // $target 크기 변화 → canvas 크기 동기화
         // 생성 시 캡처한 width/height 대신 매번 실시간 크기를 사용해야 resize 후 영역이 맞음
+        // rAF로 감싸야 "ResizeObserver loop" 경고를 막을 수 있다.
+        // 콜백 안에서 canvas 크기를 바꾸면 $target이 다시 resize되어 재진입이 발생하는데,
+        // rAF로 다음 프레임에 실행하면 현재 알림 사이클과 분리된다.
         new ResizeObserver(entries => {
-            const { width: w, height: h } = entries[0].contentRect;
-            this.render.canvas.width = w;
-            this.render.canvas.height = h;
-            this.render.options.width = w;
-            this.render.options.height = h;
+            requestAnimationFrame(() => {
+                const { width: w, height: h } = entries[0].contentRect;
+                this.render.canvas.width = w;
+                this.render.canvas.height = h;
+                this.render.options.width = w;
+                this.render.options.height = h;
+            });
         }).observe($target);
 
         if (initState.rainMode) this.startRain();
@@ -128,7 +150,9 @@ export default class RainCanvas {
         this.rainInterval = setInterval(() => {
             // resize 대응: 매 틱마다 현재 캔버스 너비를 읽음
             const width = this.render.canvas.width;
-            const radius = 12 + Math.random() * 8;
+            // size(1–20) → 반지름 범위. size 10 기준 12–16px, size 1은 최소 4px 보장
+            const base = 2 + this.state.settings.rain.size * 1.4;
+            const radius = base + Math.random() * (base * 0.3);
             // 사선으로 떨어지므로 왼쪽 바깥에서도 시작할 수 있게 범위 확장
             const x = -radius + Math.random() * (width + radius * 2);
 

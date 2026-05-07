@@ -13,7 +13,7 @@ import BubbleLayer from './layout/BubbleLayer';
  */
 export default class Canvas {
     private rainCanvas: RainCanvas;
-    private bubbleLayer: BubbleLayer;
+    // private bubbleLayer: BubbleLayer;
     state?: State;
 
     constructor({
@@ -32,7 +32,7 @@ export default class Canvas {
         this.state = { ...initState };
 
         // BubbleLayer를 먼저 마운트해 z-index 상 RainCanvas 위에 오게 함
-        this.bubbleLayer = new BubbleLayer({ $target: $el, initState: this.state });
+        // this.bubbleLayer = new BubbleLayer({ $target: $el, initState: this.state });
         this.rainCanvas = new RainCanvas({ $target: $el, initState: this.state, onBubbleCatch });
 
         this.render();
@@ -40,12 +40,12 @@ export default class Canvas {
 
     setState(nextState: State) {
         this.state = { ...this.state, ...nextState };
-        this.bubbleLayer.setState(this.state);
+        // this.bubbleLayer.setState(this.state);
         this.rainCanvas.setState(this.state);
     }
 
     render() {
-        this.bubbleLayer.render();
+        // this.bubbleLayer.render();
         // RainCanvas는 Matter.js 루프가 직접 렌더링을 담당 — 여기서 호출 불필요
     }
 }

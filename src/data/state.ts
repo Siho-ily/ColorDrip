@@ -1,7 +1,7 @@
 import type { State } from '@/types/state';
 
 const initialState: State = {
-    rainMode: false,
+    rainMode: true,
     bubbles: [],
     palette: {
         open: false,
@@ -16,7 +16,7 @@ const initialState: State = {
     settings: {
         colorSpace: 'hsl',
         showHexAlways: false,
-        rain: { speed: 10, density: 10 },
+        rain: { speed: 10, density: 10, size: 10 },
     },
     ui: {
         visible: false,

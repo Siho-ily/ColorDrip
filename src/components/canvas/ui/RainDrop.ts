@@ -45,33 +45,14 @@ export default class RainDrop {
         return (this.body as Matter.Body & { circleRadius: number }).circleRadius;
     }
 
-    /**
-     * 진행 방향을 향한 정삼각형을 canvas에 그린다.
-     * RainCanvas의 afterRender 이벤트에서 매 프레임 호출된다.
-     *
-     * 속도 벡터(vx, vy)로 회전각을 계산해 꼭짓점이 낙하 방향을 가리키도록 한다.
-     * - Math.atan2(vy, vx): 속도 벡터의 각도
-     * - - Math.PI / 2: 기본 좌표계(위쪽이 0)에서 진행 방향으로 정렬하기 위한 보정
-     */
+    /** RainCanvas의 afterRender 이벤트에서 매 프레임 호출된다 */
     draw(ctx: CanvasRenderingContext2D) {
         const { x, y } = this.body.position;
-        const { x: vx, y: vy } = this.body.velocity;
         const r = this.radius;
-        const angle = Math.atan2(vy, vx) - Math.PI / 2;
 
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-
-        // 정삼각형: 외접원 반지름 r 기준으로 꼭짓점 3개 계산
         ctx.beginPath();
-        ctx.moveTo(0, -r);
-        ctx.lineTo(r * Math.sin(2 * Math.PI / 3), -r * Math.cos(2 * Math.PI / 3));
-        ctx.lineTo(r * Math.sin(4 * Math.PI / 3), -r * Math.cos(4 * Math.PI / 3));
-        ctx.closePath();
-
+        ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fillStyle = hslToCss(this.color);
         ctx.fill();
-        ctx.restore();
     }
 }
