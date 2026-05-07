@@ -1,7 +1,7 @@
 import Matter from 'matter-js';
 import type { State } from '@/types/state';
 import type { Bubble, HslColor } from '@/types/bubble';
-import RainDrop from '../ui/RainDrop';
+import RainDrop from './RainDrop';
 import {
     GRAVITY,
     TOLERANCE,

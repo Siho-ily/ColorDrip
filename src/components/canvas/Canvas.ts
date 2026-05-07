@@ -1,7 +1,7 @@
 import type { State } from '@/types/state';
 import type { Bubble } from '@/types/bubble';
-import RainCanvas from './layout/RainCanvas';
-import BubbleLayer from './layout/BubbleLayer';
+import RainCanvas from './rain/RainCanvas';
+import BubbleLayer from './bubble/BubbleLayer';
 
 /**
  * RainCanvas와 BubbleLayer를 묶는 조율 레이어.
