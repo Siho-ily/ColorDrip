@@ -1,5 +1,6 @@
 import Matter from 'matter-js';
 import type { HslColor } from '@/types/bubble';
+import { DROP_RESTITUTION } from '@/data/constants';
 
 function hslToCss({ h, s, l }: HslColor) {
     return `hsl(${h}, ${s}%, ${l}%)`;
@@ -28,7 +29,7 @@ export default class RainDrop {
         this.color = color;
 
         this.body = Matter.Bodies.circle(x, y, radius, {
-            restitution: 0.3,
+            restitution: DROP_RESTITUTION,
             // afterRender에서 직접 그리므로 Matter.js 기본 렌더는 투명하게
             render: { fillStyle: 'transparent', strokeStyle: 'transparent', lineWidth: 0 },
         });

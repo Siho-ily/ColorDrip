@@ -2,14 +2,27 @@ import Matter from 'matter-js';
 import type { State } from '@/types/state';
 import type { Bubble, HslColor } from '@/types/bubble';
 import RainDrop from '../ui/RainDrop';
+import {
+    GRAVITY,
+    WIND_X,
+    RADIUS_BASE,
+    RADIUS_FACTOR,
+    RADIUS_JITTER,
+    DENSITY_INTERVAL_BASE,
+    DROP_SATURATION,
+    DROP_LIGHTNESS,
+    CLEANUP_INTERVAL,
+    OFFSCREEN_MARGIN,
+} from '@/data/constants';
 
 const { Engine, Render, Runner, Composite, World, Events } = Matter;
 
-// 수평 초기 속도 — 모든 방울에 동일하게 적용해 바람 방향을 표현
-const WIND_X = 2.5;
-
 function randomHsl(): HslColor {
-    return { h: Math.random() * 360, s: 70 + Math.random() * 30, l: 50 + Math.random() * 15 };
+    return {
+        h: Math.random() * 360,
+        s: DROP_SATURATION.min + Math.random() * DROP_SATURATION.range,
+        l: DROP_LIGHTNESS.min + Math.random() * DROP_LIGHTNESS.range,
+    };
 }
 
 /**
@@ -48,7 +61,7 @@ export default class RainCanvas {
         const width = $target.clientWidth;
         const height = $target.clientHeight;
 
-        this.engine = Engine.create({ gravity: { x: 0, y: 1, scale: 0.0005 } });
+        this.engine = Engine.create({ gravity: GRAVITY });
 
         // wireframes 끄고 배경 투명 — BackgroundLayer가 배경을 담당
         this.render = Render.create({
@@ -72,7 +85,7 @@ export default class RainCanvas {
 
             // Query.point는 body 경계를 정확히 검사해 체감 클릭 영역이 좁다.
             // 중심 거리 기반으로 직접 검사하고 tolerance를 더해 클릭 인식률을 높인다.
-            const TOLERANCE = 20;
+            const TOLERANCE = this.state.settings.rain.tolerance;
             const hit = Composite.allBodies(this.engine.world)
                 .filter(b => !b.isStatic)
                 .find(b => {
@@ -112,7 +125,7 @@ export default class RainCanvas {
         // 화면 밖 body 정리 (매번 canvas 크기를 다시 읽어 resize 대응)
         this.cleanupInterval = setInterval(() => {
             this.removeOffscreen(this.render.canvas.width, this.render.canvas.height);
-        }, 3000);
+        }, CLEANUP_INTERVAL);
 
         // $target 크기 변화 → canvas 크기 동기화
         // 생성 시 캡처한 width/height 대신 매번 실시간 크기를 사용해야 resize 후 영역이 맞음
@@ -145,14 +158,14 @@ export default class RainCanvas {
         if (this.rainInterval !== null) return;
 
         // density(1–20) → 생성 간격(ms). 높을수록 자주 생성
-        const interval = Math.round(2000 / this.state.settings.rain.density);
+        const interval = Math.round(DENSITY_INTERVAL_BASE / this.state.settings.rain.density);
 
         this.rainInterval = setInterval(() => {
             // resize 대응: 매 틱마다 현재 캔버스 너비를 읽음
             const width = this.render.canvas.width;
             // size(1–20) → 반지름 범위. size 10 기준 12–16px, size 1은 최소 4px 보장
-            const base = 2 + this.state.settings.rain.size * 1.4;
-            const radius = base + Math.random() * (base * 0.3);
+            const base = RADIUS_BASE + this.state.settings.rain.size * RADIUS_FACTOR;
+            const radius = base + Math.random() * (base * RADIUS_JITTER);
             // 사선으로 떨어지므로 왼쪽 바깥에서도 시작할 수 있게 범위 확장
             const x = -radius + Math.random() * (width + radius * 2);
 
@@ -180,7 +193,7 @@ export default class RainCanvas {
     private removeOffscreen(width: number, height: number) {
         this.drops.forEach((drop, id) => {
             const { x, y } = drop.body.position;
-            if (y > height + 100 || x < -200 || x > width + 200) {
+            if (y > height + OFFSCREEN_MARGIN.bottom || x < -OFFSCREEN_MARGIN.side || x > width + OFFSCREEN_MARGIN.side) {
                 World.remove(this.engine.world, drop.body);
                 this.drops.delete(id);
             }
