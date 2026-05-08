@@ -32,6 +32,7 @@ function hslToChroma(c: HslColor) {
  * 내부 상태와 ColorWheelPicker 모두 HSL 기준이라 별도 변환 없이 바로 쓸 수 있다.
  */
 export function mixColors(entries: ColorEntry[], colorSpace: ColorSpace): HslColor {
+    if (entries.length === 0) return { h: 0, s: 0, l: 0 };
     const colors = entries.map(e => hslToChroma(e.color));
     const weights = entries.map(e => e.weight ?? 1);
 
