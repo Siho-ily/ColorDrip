@@ -12,7 +12,7 @@ export default class App {
         this.state = { ...initialState };
 
         this.backgroundLayer = new BackgroundLayer({ $target: $app });
-        
+
         this.canvas = new Canvas({
             $target: $app,
             initState: initialState,

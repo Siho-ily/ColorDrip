@@ -27,7 +27,7 @@ export default class Canvas {
         onBubbleCatch: (bubble: Bubble) => void;
     }) {
         const $el = document.createElement('div');
-        $el.className = 'absolute inset-0 z-10';
+        $el.className = 'absolute inset-0 z-10 select-none';
         $target.appendChild($el);
 
         this.state = { ...initState };
