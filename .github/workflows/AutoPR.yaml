@@ -7,27 +7,45 @@ on:
 jobs:
     auto-pr:
         permissions:
+            contents: read
             pull-requests: write
         runs-on: ubuntu-latest
         steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
             - name: Create PR to dev
               env:
                   GH_TOKEN: ${{ secrets.GH_PAT }}
+                  ACTOR: ${{ github.actor }}
+                  BRANCH: ${{ github.ref_name }}
+                  REPO: ${{ github.repository }}
               run: |
                   EXISTING=$(gh pr list \
-                    --repo "${{ github.repository }}" \
-                    --head "${{ github.ref_name }}" \
+                    --repo "$REPO" \
+                    --head "$BRANCH" \
                     --base dev \
                     --state open \
                     --json number \
                     --jq 'length')
                   if [ "$EXISTING" = "0" ]; then
+                    CHANGED_FILES=$(git diff --name-only origin/dev...HEAD | sed 's/^/- /')
+                    cat > /tmp/pr_body.md << EOF
+Auto-generated PR from \`$BRANCH\`
+
+## 작성자
+$ACTOR
+
+## 변경된 파일
+$CHANGED_FILES
+EOF
                     gh pr create \
-                      --repo "${{ github.repository }}" \
-                      --head "${{ github.ref_name }}" \
+                      --repo "$REPO" \
+                      --head "$BRANCH" \
                       --base dev \
-                      --title "${{ github.ref_name }}" \
-                      --body "Auto-generated PR from branch \`${{ github.ref_name }}\`"
+                      --title "$BRANCH → dev" \
+                      --body-file /tmp/pr_body.md
                   else
                     echo "PR already exists, skipping."
                   fi

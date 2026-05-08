@@ -12,11 +12,13 @@ jobs:
             - name: Label by commit prefix
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  REPO: ${{ github.repository }}
               run: |
-                  LABELS=$(gh pr view ${{ github.event.pull_request.number }} \
-                    --repo ${{ github.repository }} \
+                  LABELS=$(gh pr view "$PR_NUMBER" \
+                    --repo "$REPO" \
                     --json commits \
-                    --jq '.commits[].messageHeadline | split(":")[0] | split("(")[0] | split("!")[0]' \
+                    --jq '.commits[].messageHeadline | split(":")[0] | split("(")[0] | split("!")[0] | split("/")[0]' \
                   | sort -u \
                   | while read TYPE; do
                       case $TYPE in
@@ -30,7 +32,7 @@ jobs:
                     done | sort -u | paste -sd ',')
 
                   if [ -n "$LABELS" ]; then
-                    gh pr edit ${{ github.event.pull_request.number }} \
-                      --repo ${{ github.repository }} \
+                    gh pr edit "$PR_NUMBER" \
+                      --repo "$REPO" \
                       --add-label "$LABELS"
                   fi
