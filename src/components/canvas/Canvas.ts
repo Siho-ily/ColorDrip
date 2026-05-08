@@ -1,25 +1,26 @@
 import type { State } from '@/types/state';
 import type { Bubble } from '@/types/bubble';
 import RainCanvas from './rain/RainCanvas';
+import BubbleCanvas from './bubble/BubbleCanvas';
 import BubbleLayer from './bubble/BubbleLayer';
 
 /**
- * RainCanvas와 BubbleLayer를 묶는 조율 레이어.
+ * RainCanvas / BubbleCanvas / BubbleLayer를 조율하는 레이어.
  *
- * - RainCanvas: Matter.js 물리 엔진, 빗방울 낙하
- * - BubbleLayer: catch 이후 DOM div로 floating 버블 렌더링
- *
- * 두 레이어가 같은 $el을 부모로 공유하므로 좌표계 변환 없이 위치가 맞아떨어진다.
+ * - RainCanvas: 빗방울 물리 + catch 감지
+ * - BubbleCanvas: catch된 버블 물리 (충돌, 반사) — canvas 없음, 위치 콜백만 emit
+ * - BubbleLayer: 버블 DOM 렌더링 — BubbleCanvas 위치 콜백을 받아 transform 갱신
  */
 export default class Canvas {
     private rainCanvas: RainCanvas;
-    // private bubbleLayer: BubbleLayer;
-    state?: State;
+    private bubbleCanvas: BubbleCanvas;
+    private bubbleLayer: BubbleLayer;
+    private state: State;
 
     constructor({
         $target,
         initState,
-        onBubbleCatch,  // 방울 클릭 시 App으로 catch 사실을 알리는 콜백
+        onBubbleCatch,
     }: {
         $target: HTMLElement;
         initState: State;
@@ -31,21 +32,36 @@ export default class Canvas {
 
         this.state = { ...initState };
 
-        // BubbleLayer를 먼저 마운트해 z-index 상 RainCanvas 위에 오게 함
-        // this.bubbleLayer = new BubbleLayer({ $target: $el, initState: this.state });
-        this.rainCanvas = new RainCanvas({ $target: $el, initState: this.state, onBubbleCatch });
+        this.bubbleLayer = new BubbleLayer({ $target: $el });
 
-        this.render();
+        this.bubbleCanvas = new BubbleCanvas({
+            $target: $el,
+            onPositionUpdate: (updates) => this.bubbleLayer.syncPositions(updates),
+        });
+
+        this.rainCanvas = new RainCanvas({
+            $target: $el,
+            initState: this.state,
+            onBubbleCatch: (bubble) => {
+                this.bubbleLayer.addBubble(bubble);
+                this.bubbleCanvas.addBubble(bubble);
+                onBubbleCatch(bubble);
+            },
+        });
     }
 
     setState(nextState: State) {
+        const prev = this.state;
         this.state = { ...this.state, ...nextState };
-        // this.bubbleLayer.setState(this.state);
         this.rainCanvas.setState(this.state);
-    }
 
-    render() {
-        // this.bubbleLayer.render();
-        // RainCanvas는 Matter.js 루프가 직접 렌더링을 담당 — 여기서 호출 불필요
+        // state에서 제거된 bubble → 물리 + DOM 양쪽에서 제거
+        const nextIds = new Set(this.state.bubbles.map(b => b.id));
+        prev.bubbles.forEach(b => {
+            if (!nextIds.has(b.id)) {
+                this.bubbleCanvas.removeBubble(b.id);
+                this.bubbleLayer.removeBubble(b.id);
+            }
+        });
     }
 }

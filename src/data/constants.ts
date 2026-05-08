@@ -33,3 +33,17 @@ export const OFFSCREEN_MARGIN = { bottom: 100, side: 200 };
 
 /** 방울 탄성 계수 (0 = 완전 비탄성, 1 = 완전 탄성) */
 export const DROP_RESTITUTION = 0.3;
+
+// ─── BubbleCanvas ─────────────────────────────────────────────────────────────
+
+/** 버블 탄성 계수 */
+export const BUBBLE_RESTITUTION = 0.85;
+
+/** 버블 공기 저항 (0에 가까울수록 오래 떠다님) */
+export const BUBBLE_FRICTION_AIR = 0.008;
+
+/** 벽 두께 (px). 뷰포트 바깥에 위치해 시각적으로 보이지 않음 */
+export const BUBBLE_WALL_THICKNESS = 100;
+
+/** catch 시점 속도 스케일. rain drop 속도를 줄여 float 느낌을 냄 */
+export const BUBBLE_VELOCITY_SCALE = 0.3;

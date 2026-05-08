@@ -12,6 +12,7 @@ export default class App {
         this.state = { ...initialState };
 
         this.backgroundLayer = new BackgroundLayer({ $target: $app });
+        
         this.canvas = new Canvas({
             $target: $app,
             initState: initialState,
@@ -20,6 +21,7 @@ export default class App {
                 this.setState({ bubbles: [...this.state.bubbles, bubble] });
             },
         });
+
         this.palette = new Palette({
             $target: $app,
             onBubbleCreate: (_color) => {

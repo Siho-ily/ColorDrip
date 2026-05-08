@@ -1,44 +1,46 @@
-import type { State } from "@/types/state";
+import type { Bubble } from '@/types/bubble';
 
 /**
- * floating/dragging/selected 상태의 버블을 DOM div로 렌더링하는 레이어.
+ * 버블의 시각적 렌더링을 담당하는 DOM 레이어.
  *
- * - RainCanvas와 같은 부모($target)를 공유해 좌표계가 동일
- * - 컨테이너 자체는 pointer-events: none, 개별 버블 div는 pointer-events: auto
- * - Matter.js body가 world에 살아있는 동안 매 setState마다 position을 동기화
+ * - BubbleCanvas(물리)에서 매 프레임 위치를 받아 transform으로 갱신 (layout 재계산 없음)
+ * - addBubble / removeBubble로 증분 DOM 관리 — 전체 재생성 없음
+ * - 컨테이너: pointer-events: none / 개별 버블 div: pointer-events: auto
  */
 export default class BubbleLayer {
-    private $el: HTMLDivElement;    // pointer-events: none 컨테이너
-    state?: State;
+    private $el: HTMLDivElement;
+    private bubbleMap = new Map<number, { $el: HTMLDivElement; radius: number }>();
 
-    constructor({ $target, initState }: { $target: HTMLElement, initState: State }) {
+    constructor({ $target }: { $target: HTMLElement }) {
         this.$el = document.createElement('div');
-        this.$el.className = 'absolute inset-0 z-10 pointer-events-none';
+        this.$el.className = 'absolute inset-0 pointer-events-none';
         $target.appendChild(this.$el);
-
-        this.state = { ...initState };
-
-        this.render();
     }
 
-    setState(nextState: State) {
-        this.state = { ...this.state, ...nextState };
-        this.render();
+    addBubble(bubble: Bubble) {
+        const $div = document.createElement('div');
+        $div.className = 'absolute top-0 left-0 rounded-full pointer-events-auto';
+        $div.style.width = `${bubble.radius * 2}px`;
+        $div.style.height = `${bubble.radius * 2}px`;
+        $div.style.backgroundColor = `hsl(${bubble.color.h}, ${bubble.color.s}%, ${bubble.color.l}%)`;
+        $div.style.transform = `translate(${bubble.position.x - bubble.radius}px, ${bubble.position.y - bubble.radius}px)`;
+
+        this.bubbleMap.set(bubble.id, { $el: $div, radius: bubble.radius });
+        this.$el.appendChild($div);
     }
 
-    render() {
-        // 매 render마다 전체 재생성 — 추후 bubble id 기반 diff로 최적화 가능
-        this.$el.innerHTML = '';
-        this.state?.bubbles.forEach(bubble => {
-            const $bubble = document.createElement('div');
-            $bubble.className = 'absolute rounded-full pointer-events-auto';
-            $bubble.style.backgroundColor = `hsl(${bubble.color.h}, ${bubble.color.s}%, ${bubble.color.l}%)`;
-            $bubble.style.width = `${bubble.radius * 2}px`;
-            $bubble.style.height = `${bubble.radius * 2}px`;
-            // position은 body 중심 좌표 — 좌상단 기준 CSS로 변환
-            $bubble.style.left = `${bubble.position.x - bubble.radius}px`;
-            $bubble.style.top = `${bubble.position.y - bubble.radius}px`;
-            this.$el.appendChild($bubble);
+    removeBubble(id: number) {
+        const entry = this.bubbleMap.get(id);
+        if (!entry) return;
+        entry.$el.remove();
+        this.bubbleMap.delete(id);
+    }
+
+    syncPositions(updates: { id: number; x: number; y: number }[]) {
+        updates.forEach(({ id, x, y }) => {
+            const entry = this.bubbleMap.get(id);
+            if (!entry) return;
+            entry.$el.style.transform = `translate(${x - entry.radius}px, ${y - entry.radius}px)`;
         });
     }
 }
