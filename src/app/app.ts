@@ -1,11 +1,13 @@
 import { BackgroundLayer, Canvas, Palette } from '@/components/index';
 import type { State } from '@/types/state';
 import initialState from '@/data/state';
+import BubbleContextMenu from '../components/ContextMenu/BubbleContextMenu';
 
 export default class App {
     private state: State;
     private backgroundLayer: BackgroundLayer;
     private canvas: Canvas;
+    private bubbleContextMenu: BubbleContextMenu;
     private palette: Palette;
 
     constructor({ $app }: { $app: HTMLElement }) {
@@ -13,12 +15,21 @@ export default class App {
 
         this.backgroundLayer = new BackgroundLayer({ $target: $app });
 
+        this.bubbleContextMenu = new BubbleContextMenu({
+            onFreeze:   (id) => this.canvas.freezeBubble(id),
+            onUnfreeze: (id) => this.canvas.unfreezeBubble(id),
+            getState:   () => this.state,
+            setState:   (next) => this.setState(next),
+        });
+
         this.canvas = new Canvas({
             $target: $app,
             initState: initialState,
             onBubbleCatch: (bubble) => {
-                // catch된 bubble을 state에 추가 — 이후 BubbleLayer가 DOM으로 렌더링
                 this.setState({ bubbles: [...this.state.bubbles, bubble] });
+            },
+            onBubbleContextMenu: (id, bubbleRect) => {
+                this.bubbleContextMenu.open(id, bubbleRect);
             },
         });
 

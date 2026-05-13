@@ -10,8 +10,16 @@ import type { Bubble } from '@/types/bubble';
 export default class BubbleLayer {
     private $el: HTMLDivElement;
     private bubbleMap = new Map<number, { $el: HTMLDivElement; radius: number }>();
+    private readonly onBubbleContextMenu: (id: number, bubbleRect: DOMRect) => void;
 
-    constructor({ $target }: { $target: HTMLElement }) {
+    constructor({
+        $target,
+        onBubbleContextMenu,
+    }: {
+        $target: HTMLElement;
+        onBubbleContextMenu: (id: number, bubbleRect: DOMRect) => void;
+    }) {
+        this.onBubbleContextMenu = onBubbleContextMenu;
         this.$el = document.createElement('div');
         this.$el.className = 'absolute inset-0 pointer-events-none';
         $target.appendChild(this.$el);
@@ -24,6 +32,11 @@ export default class BubbleLayer {
         $div.style.height = `${bubble.radius * 2}px`;
         $div.style.backgroundColor = `hsl(${bubble.color.h}, ${bubble.color.s}%, ${bubble.color.l}%)`;
         $div.style.transform = `translate(${bubble.position.x - bubble.radius}px, ${bubble.position.y - bubble.radius}px)`;
+
+        $div.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.onBubbleContextMenu(bubble.id, $div.getBoundingClientRect());
+        });
 
         this.bubbleMap.set(bubble.id, { $el: $div, radius: bubble.radius });
         this.$el.appendChild($div);
