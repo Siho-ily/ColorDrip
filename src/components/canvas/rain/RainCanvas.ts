@@ -148,9 +148,13 @@ export default class RainCanvas {
         const prev = this.state;
         this.state = { ...this.state, ...nextState };
 
-        // rainMode 전환에만 반응 — 나머지 설정 변경은 다음 방울 생성 시 자동 반영
-        if (!prev.rainMode && this.state.rainMode) this.startRain();
-        else if (prev.rainMode && !this.state.rainMode) this.stopRain();
+        const densityChanged = prev.settings.rain.density !== this.state.settings.rain.density;
+        if (this.state.rainMode && (!prev.rainMode || densityChanged)) {
+            this.stopRain();
+            this.startRain();
+        } else if (!this.state.rainMode && prev.rainMode) {
+            this.stopRain();
+        }
     }
 
     private startRain() {
