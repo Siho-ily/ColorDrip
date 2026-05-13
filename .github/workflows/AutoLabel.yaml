@@ -9,6 +9,28 @@ jobs:
             contents: read
             pull-requests: write
         steps:
-            - uses: actions/labeler@v5
-              with:
-                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+            - name: Label by commit prefix
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  LABELS=$(gh pr view ${{ github.event.pull_request.number }} \
+                    --repo ${{ github.repository }} \
+                    --json commits \
+                    --jq '.commits[].messageHeadline | split(":")[0] | split("(")[0] | split("!")[0]' \
+                  | sort -u \
+                  | while read TYPE; do
+                      case $TYPE in
+                        feat|feature) echo "feat" ;;
+                        fix) echo "fix" ;;
+                        chore) echo "chore" ;;
+                        docs) echo "docs" ;;
+                        refactor) echo "refactor" ;;
+                        style) echo "style" ;;
+                      esac
+                    done | sort -u | paste -sd ',')
+
+                  if [ -n "$LABELS" ]; then
+                    gh pr edit ${{ github.event.pull_request.number }} \
+                      --repo ${{ github.repository }} \
+                      --add-label "$LABELS"
+                  fi

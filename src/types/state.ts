@@ -1,37 +1,27 @@
-import type { Blob, HslColor } from './blob';
+import type { Bubble, HslColor } from './bubble';
+import type { Settings } from './settings';
 
 export interface PaletteState {
-    open: boolean;
-    presets: unknown[];
-    activePresetId: string | null;
+    open: boolean;                      // 사이드바 열림 여부
+    presets: unknown[];                 // 추후 Preset 타입으로 교체 예정
+    activePresetId: string | null;      // 현재 선택된 프리셋 id, 없으면 null
 }
 
+/** ColorWheelPicker 오버레이 상태 */
 export interface PickerState {
-    open: boolean;
-    color: HslColor;
-}
-
-export interface RainSettings {
-    speed: number;
-    density: number;
-}
-
-export interface Settings {
-    colorSpace: 'HSL' | 'OKLCH';
-    mixInOKLCH: boolean;
-    showHexAlways: boolean;
-    rain: RainSettings;
+    open: boolean;                      // 피커 표시 여부
+    color: HslColor;                    // 현재 선택 중인 색상
 }
 
 export interface State {
-    rainMode: boolean;
-    blobs: Blob[];
-    palette: PaletteState;
-    picker: PickerState;
-    selectedBlobIds: string[];
-    settings: Settings;
+    rainMode: boolean;                  // 방울 낙하 활성화 여부
+    bubbles: Bubble[];                  // 현재 존재하는 버블 목록
+    palette: PaletteState;              // 팔레트 사이드바 상태
+    picker: PickerState;                // 색상 피커 상태
+    selectedBubbleIds: number[];        // 다중 선택된 버블 id 목록
+    settings: Settings;                 // 사용자 설정
     ui: {
-        visible: boolean;
-        fadeTimer: ReturnType<typeof setTimeout> | null;
+        visible: boolean;               // TopBar/BottomBar 표시 여부
+        fadeTimer: ReturnType<typeof setTimeout> | null; // 자동 숨김 타이머
     };
 }

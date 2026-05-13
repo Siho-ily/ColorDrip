@@ -1,8 +1,8 @@
 import type { State } from '@/types/state';
 
 const initialState: State = {
-    rainMode: false,
-    blobs: [],
+    rainMode: true,
+    bubbles: [],
     palette: {
         open: false,
         presets: [],
@@ -12,12 +12,11 @@ const initialState: State = {
         open: false,
         color: { h: 0, s: 100, l: 50 },
     },
-    selectedBlobIds: [],
+    selectedBubbleIds: [],
     settings: {
-        colorSpace: 'HSL',
-        mixInOKLCH: true,
+        colorSpace: 'hsl',
         showHexAlways: false,
-        rain: { speed: 10, density: 10 },
+        rain: { speed: 10, density: 10, size: 10, wind: 2.5 },
     },
     ui: {
         visible: false,
