@@ -1,6 +1,13 @@
 import type { Bubble, HslColor } from './bubble';
 import type { Settings } from './settings';
 
+export interface ContextMenuState {
+    open: boolean;
+    bubbleId: number | null;
+    x: number;
+    y: number;
+}
+
 export interface PaletteState {
     open: boolean;                      // 사이드바 열림 여부
     presets: unknown[];                 // 추후 Preset 타입으로 교체 예정
@@ -19,6 +26,7 @@ export interface State {
     palette: PaletteState;              // 팔레트 사이드바 상태
     picker: PickerState;                // 색상 피커 상태
     selectedBubbleIds: number[];        // 다중 선택된 버블 id 목록
+    contextMenu: ContextMenuState;      // 버블 우클릭 컨텍스트 메뉴
     settings: Settings;                 // 사용자 설정
     ui: {
         visible: boolean;               // TopBar/BottomBar 표시 여부
