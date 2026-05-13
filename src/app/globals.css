@@ -1,3 +1,7 @@
+/* reset을 named layer로 가져와 utilities보다 낮은 우선순위로 만든다 */
+@import "./reset.css" layer(reset);
+@layer reset, theme, base, components, utilities;
+
 /* tailwindcss */
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -111,6 +115,13 @@ body {
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+
+    /* Context Menu */
+    --cm-bg: oklch(1 0 0);
+    --cm-fg: oklch(0.20 0.06 240);
+    --cm-border: oklch(0.70 0.08 224);
+    --cm-hover: oklch(0.87 0.07 220);
+    --cm-muted: oklch(0.55 0.04 224);
 }
 
 .dark {
@@ -145,6 +156,13 @@ body {
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+
+    /* Context Menu */
+    --cm-bg: oklch(0.20 0.04 240);
+    --cm-fg: oklch(0.92 0.03 220);
+    --cm-border: oklch(1 0 0 / 10%);
+    --cm-hover: oklch(1 0 0 / 8%);
+    --cm-muted: oklch(0.65 0.04 225);
 }
 
 @layer base {
