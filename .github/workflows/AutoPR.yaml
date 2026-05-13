@@ -32,14 +32,14 @@ jobs:
                   if [ "$EXISTING" = "0" ]; then
                     CHANGED_FILES=$(git diff --name-only origin/dev...HEAD | sed 's/^/- /')
                     cat > /tmp/pr_body.md << EOF
-Auto-generated PR from \`$BRANCH\`
+                  Auto-generated PR from \`$BRANCH\`
 
-## 작성자
-$ACTOR
+                  ## 작성자
+                  $ACTOR
 
-## 변경된 파일
-$CHANGED_FILES
-EOF
+                  ## 변경된 파일
+                  $CHANGED_FILES
+                  EOF
                     gh pr create \
                       --repo "$REPO" \
                       --head "$BRANCH" \
