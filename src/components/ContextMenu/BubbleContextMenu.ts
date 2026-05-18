@@ -9,22 +9,26 @@ export default class BubbleContextMenu {
     private readonly onUnfreeze: (id: number) => void;
     private readonly getState: () => State;
     private readonly setState: (next: Partial<State>) => void;
+    private readonly onSaveToPreset: (bubbleId: number) => void;
 
     constructor({
         onFreeze,
         onUnfreeze,
         getState,
         setState,
+        onSaveToPreset,
     }: {
         onFreeze: (id: number) => void;
         onUnfreeze: (id: number) => void;
         getState: () => State;
         setState: (next: Partial<State>) => void;
+        onSaveToPreset: (bubbleId: number) => void;
     }) {
         this.onFreeze = onFreeze;
         this.onUnfreeze = onUnfreeze;
         this.getState = getState;
         this.setState = setState;
+        this.onSaveToPreset = onSaveToPreset;
 
         this.menu = new ContextMenu({
             onClose: () => {
@@ -74,7 +78,7 @@ export default class BubbleContextMenu {
             },
             { kind: 'separator' },
             { kind: 'action', id: 'edit-color',   label: '색상 편집',    onSelect: () => { /* TODO: open picker */ } },
-            { kind: 'action', id: 'save-palette', label: '팔레트에 저장', onSelect: () => { /* TODO: save to palette */ } },
+            { kind: 'action', id: 'save-palette', label: '팔레트에 저장', onSelect: () => this.onSaveToPreset(bubbleId) },
             { kind: 'separator' },
             {
                 kind: 'action',
