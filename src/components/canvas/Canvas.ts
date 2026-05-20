@@ -21,10 +21,12 @@ export default class Canvas {
         $target,
         initState,
         onBubbleCatch,
+        onBubbleContextMenu,
     }: {
         $target: HTMLElement;
         initState: State;
         onBubbleCatch: (bubble: Bubble) => void;
+        onBubbleContextMenu: (id: number, bubbleRect: DOMRect) => void;
     }) {
         const $el = document.createElement('div');
         $el.className = 'absolute inset-0 z-10 select-none';
@@ -32,7 +34,7 @@ export default class Canvas {
 
         this.state = { ...initState };
 
-        this.bubbleLayer = new BubbleLayer({ $target: $el });
+        this.bubbleLayer = new BubbleLayer({ $target: $el, onBubbleContextMenu });
 
         this.bubbleCanvas = new BubbleCanvas({
             $target: $el,
@@ -49,6 +51,9 @@ export default class Canvas {
             },
         });
     }
+
+    freezeBubble(id: number) { this.bubbleCanvas.freezeBubble(id); }
+    unfreezeBubble(id: number) { this.bubbleCanvas.unfreezeBubble(id); }
 
     setState(nextState: State) {
         const prev = this.state;

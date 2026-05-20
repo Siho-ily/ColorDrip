@@ -111,6 +111,18 @@ export default class BubbleCanvas {
         this.bodyMap.delete(id);
     }
 
+    freezeBubble(id: number) {
+        const body = this.bodyMap.get(id);
+        if (!body) return;
+        Body.setStatic(body, true);
+    }
+
+    unfreezeBubble(id: number) {
+        const body = this.bodyMap.get(id);
+        if (!body) return;
+        Body.setStatic(body, false);
+    }
+
     private addWalls(width: number, height: number) {
         const opts = { isStatic: true, restitution: 1, friction: 0 };
         const t = BUBBLE_WALL_THICKNESS;
