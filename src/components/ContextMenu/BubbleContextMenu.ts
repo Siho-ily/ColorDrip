@@ -60,8 +60,8 @@ export default class BubbleContextMenu {
         const [ol, oc, oh] = color.oklch();
 
         const rgbStr   = `rgb(${r}, ${g}, ${b})`;
-        const hslStr   = `hsl(${Math.round(hh)} ${Math.round(ss * 100)}% ${Math.round(ll * 100)}%)`;
-        const oklchStr = `oklch(${(ol * 100).toFixed(1)}% ${oc.toFixed(3)} ${(oh ?? 0).toFixed(1)})`;
+        const hslStr   = `hsl(${Math.round(hh || 0)} ${Math.round(ss * 100)}% ${Math.round(ll * 100)}%)`;
+        const oklchStr = `oklch(${(ol * 100).toFixed(1)}% ${oc.toFixed(3)} ${(oh || 0).toFixed(1)})`;
 
         return [
             {
