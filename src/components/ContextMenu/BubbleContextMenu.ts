@@ -40,8 +40,11 @@ export default class BubbleContextMenu {
         if (prevId !== null) this.onUnfreeze(prevId);
 
         this.onFreeze(id);
-        this.menu.show(bubbleRect, this.buildMenuItems(id));
-        this.setState({ contextMenu: { open: true, bubbleId: id, x: bubbleRect.right, y: bubbleRect.top } });
+        const items = this.buildMenuItems(id);
+        if (items.length > 0) {
+            this.menu.show(bubbleRect, items);
+            this.setState({ contextMenu: { open: true, bubbleId: id, x: bubbleRect.right, y: bubbleRect.top } });
+        }
     }
 
     private buildMenuItems(bubbleId: number): MenuItemDef[] {
