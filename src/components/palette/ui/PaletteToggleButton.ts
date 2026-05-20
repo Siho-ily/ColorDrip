@@ -8,7 +8,15 @@ export default class PaletteToggleButton {
     private $el: HTMLButtonElement;
     private readonly onToggle: () => void;
 
-    constructor({ $target, onToggle }: { $target: HTMLElement; onToggle: () => void }) {
+    constructor({
+        $target,
+        onToggle,
+        onContextMenu,
+    }: {
+        $target: HTMLElement;
+        onToggle: () => void;
+        onContextMenu?: (rect: DOMRect) => void;
+    }) {
         this.onToggle = onToggle;
 
         this.$el = document.createElement('button');
@@ -33,6 +41,14 @@ export default class PaletteToggleButton {
         `;
 
         this.$el.addEventListener('click', () => this.onToggle());
+
+        if (onContextMenu) {
+            this.$el.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                onContextMenu(this.$el.getBoundingClientRect());
+            });
+        }
+
         $target.appendChild(this.$el);
     }
 

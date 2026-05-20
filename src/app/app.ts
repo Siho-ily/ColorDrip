@@ -1,7 +1,9 @@
 import { BackgroundLayer, Canvas, Palette } from '@/components/index';
 import type { State } from '@/types/state';
+import type { Preset } from '@/types/palette';
 import initialState from '@/data/state';
 import BubbleContextMenu from '../components/ContextMenu/BubbleContextMenu';
+import PaletteContextMenu from '../components/ContextMenu/PaletteContextMenu';
 import { loadPaletteStore, savePaletteStore, createPreset } from '@/lib/paletteStorage';
 import { createPresetColor } from '@/lib/color';
 
@@ -10,6 +12,7 @@ export default class App {
     private backgroundLayer: BackgroundLayer;
     private canvas: Canvas;
     private bubbleContextMenu: BubbleContextMenu;
+    private paletteContextMenu: PaletteContextMenu;
     private palette: Palette;
 
     constructor({ $app }: { $app: HTMLElement }) {
@@ -46,6 +49,14 @@ export default class App {
             },
         });
 
+        this.paletteContextMenu = new PaletteContextMenu({
+            $target: $app,
+            onToggle: () => this.setState({
+                palette: { ...this.state.palette, open: !this.state.palette.open },
+            }),
+            getState: () => this.state,
+        });
+
         this.palette = new Palette({
             $target: $app,
             onAddPreset: () => this.addPreset(),
@@ -61,11 +72,10 @@ export default class App {
                 },
             }),
             onDeletePreset: (presetId) => this.deletePreset(presetId),
+            onDuplicatePreset: (presetId) => this.duplicatePreset(presetId),
+            onReorderPresets: (orderedIds) => this.reorderPresets(orderedIds),
             onColorSlotClick: (presetColor) => this.canvas.spawnBubble(presetColor.color),
             onAddColorToPreset: (color) => this.addColorToActivePreset(color),
-            onToggleOpen: () => this.setState({
-                palette: { ...this.state.palette, open: !this.state.palette.open },
-            }),
         });
 
         this.setState(this.state);
@@ -75,6 +85,7 @@ export default class App {
         this.state = { ...this.state, ...nextState };
         this.backgroundLayer.setState(this.state);
         this.canvas.setState(this.state);
+        this.paletteContextMenu.setState(this.state);
         this.palette.setState(this.state);
 
         savePaletteStore({
@@ -93,6 +104,31 @@ export default class App {
                 activePresetId: preset.id,
             },
         });
+    }
+
+    private duplicatePreset(presetId: string) {
+        const preset = this.state.palette.presets.find(p => p.id === presetId);
+        if (!preset) return;
+
+        const newPreset: Preset = {
+            ...createPreset(`${preset.name} 복사`),
+            colors: preset.colors.map(c => ({ ...c, id: crypto.randomUUID() })),
+        };
+
+        const idx = this.state.palette.presets.findIndex(p => p.id === presetId);
+        const presets = [...this.state.palette.presets];
+        presets.splice(idx + 1, 0, newPreset);
+
+        this.setState({
+            palette: { ...this.state.palette, presets, activePresetId: newPreset.id },
+        });
+    }
+
+    private reorderPresets(orderedIds: string[]) {
+        const presets = orderedIds
+            .map(id => this.state.palette.presets.find(p => p.id === id))
+            .filter((p): p is Preset => p !== undefined);
+        this.setState({ palette: { ...this.state.palette, presets } });
     }
 
     private deletePreset(presetId: string) {
