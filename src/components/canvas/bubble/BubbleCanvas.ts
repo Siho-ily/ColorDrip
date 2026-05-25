@@ -69,8 +69,13 @@ export default class BubbleCanvas {
             onPositionUpdate(updates);
         });
 
-        // $target 기준 마우스 좌표 → 물리 세계 좌표와 동일 (같은 부모 공유)
-        const mouse = Mouse.create($target);
+        // document 기준으로 마우스 이벤트를 수신해야 팔레트 등 상위 z-index 요소 위에서도
+        // 드래그가 끊기지 않는다. Canvas.$el이 inset-0이므로 좌표 오프셋은 동일.
+        const mouse = Mouse.create(document.documentElement);
+        // Matter.js가 'wheel' 이벤트에 passive:false + preventDefault()를 걸어 페이지 스크롤을 막는다.
+        // 드래그 물리에 wheel은 불필요하므로 제거한다. (matter.js build/matter.js:5896 참고)
+        const _m = mouse as unknown as Record<string, EventListener>;
+        document.documentElement.removeEventListener('wheel', _m['mousewheel']);
         const mouseConstraint = MouseConstraint.create(this.engine, {
             mouse,
             constraint: { stiffness: 0.2, render: { visible: false } },

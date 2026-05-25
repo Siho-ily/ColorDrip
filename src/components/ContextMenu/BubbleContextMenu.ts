@@ -9,22 +9,26 @@ export default class BubbleContextMenu {
     private readonly onUnfreeze: (id: number) => void;
     private readonly getState: () => State;
     private readonly setState: (next: Partial<State>) => void;
+    private readonly onSaveToPreset: (bubbleId: number) => void;
 
     constructor({
         onFreeze,
         onUnfreeze,
         getState,
         setState,
+        onSaveToPreset,
     }: {
         onFreeze: (id: number) => void;
         onUnfreeze: (id: number) => void;
         getState: () => State;
         setState: (next: Partial<State>) => void;
+        onSaveToPreset: (bubbleId: number) => void;
     }) {
         this.onFreeze = onFreeze;
         this.onUnfreeze = onUnfreeze;
         this.getState = getState;
         this.setState = setState;
+        this.onSaveToPreset = onSaveToPreset;
 
         this.menu = new ContextMenu({
             onClose: () => {
@@ -40,11 +44,8 @@ export default class BubbleContextMenu {
         if (prevId !== null) this.onUnfreeze(prevId);
 
         this.onFreeze(id);
-        const items = this.buildMenuItems(id);
-        if (items.length > 0) {
-            this.menu.show(bubbleRect, items);
-            this.setState({ contextMenu: { open: true, bubbleId: id, x: bubbleRect.right, y: bubbleRect.top } });
-        }
+        this.menu.show(bubbleRect, this.buildMenuItems(id));
+        this.setState({ contextMenu: { open: true, bubbleId: id, x: bubbleRect.right, y: bubbleRect.top } });
     }
 
     private buildMenuItems(bubbleId: number): MenuItemDef[] {
@@ -60,8 +61,8 @@ export default class BubbleContextMenu {
         const [ol, oc, oh] = color.oklch();
 
         const rgbStr   = `rgb(${r}, ${g}, ${b})`;
-        const hslStr   = `hsl(${Math.round(hh || 0)} ${Math.round(ss * 100)}% ${Math.round(ll * 100)}%)`;
-        const oklchStr = `oklch(${(ol * 100).toFixed(1)}% ${oc.toFixed(3)} ${(oh || 0).toFixed(1)})`;
+        const hslStr   = `hsl(${Math.round(hh)} ${Math.round(ss * 100)}% ${Math.round(ll * 100)}%)`;
+        const oklchStr = `oklch(${(ol * 100).toFixed(1)}% ${oc.toFixed(3)} ${(oh ?? 0).toFixed(1)})`;
 
         return [
             {
@@ -77,7 +78,7 @@ export default class BubbleContextMenu {
             },
             { kind: 'separator' },
             { kind: 'action', id: 'edit-color',   label: '색상 편집',    onSelect: () => { /* TODO: open picker */ } },
-            { kind: 'action', id: 'save-palette', label: '팔레트에 저장', onSelect: () => { /* TODO: save to palette */ } },
+            { kind: 'action', id: 'save-palette', label: '팔레트에 저장', onSelect: () => this.onSaveToPreset(bubbleId) },
             { kind: 'separator' },
             {
                 kind: 'action',
