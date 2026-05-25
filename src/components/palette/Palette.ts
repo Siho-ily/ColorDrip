@@ -1,12 +1,14 @@
 import type { State } from "@/types/state";
 import type { HslColor } from "@/types/bubble";
-import type { PresetColor } from "@/types/palette";
+import type { PresetColor, Preset } from "@/types/palette";
 import ColorWheelPicker from './ui/ColorWheelPicker';
 import PaletteSidebar from './ui/PaletteSidebar';
+import ColorSlotContextMenu from '@/components/ContextMenu/ColorSlotContextMenu';
 
 export default class Palette {
     private colorWheelPicker: ColorWheelPicker;
     private paletteSidebar: PaletteSidebar;
+    private colorSlotContextMenu: ColorSlotContextMenu;
 
     constructor({
         $target,
@@ -18,6 +20,11 @@ export default class Palette {
         onReorderPresets,
         onColorSlotClick,
         onAddColorToPreset,
+        getPresets,
+        onEditPresetColor,
+        onDeletePresetColor,
+        onDuplicatePresetColor,
+        onMoveColorToPreset,
     }: {
         $target: HTMLElement;
         onAddPreset: () => void;
@@ -28,8 +35,22 @@ export default class Palette {
         onReorderPresets: (orderedIds: string[]) => void;
         onColorSlotClick: (presetColor: PresetColor) => void;
         onAddColorToPreset: (color: HslColor) => void;
+        getPresets: () => Preset[];
+        onEditPresetColor: (presetId: string, colorId: string, newColor: HslColor) => void;
+        onDeletePresetColor: (presetId: string, colorId: string) => void;
+        onDuplicatePresetColor: (presetId: string, colorId: string) => void;
+        onMoveColorToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void;
     }) {
         this.colorWheelPicker = new ColorWheelPicker({ $target });
+
+        this.colorSlotContextMenu = new ColorSlotContextMenu({
+            openColorPicker: (initialColor, onConfirm) => this.colorWheelPicker.open(onConfirm, initialColor),
+            getPresets,
+            onEdit: onEditPresetColor,
+            onDelete: onDeletePresetColor,
+            onDuplicate: onDuplicatePresetColor,
+            onMoveTo: onMoveColorToPreset,
+        });
 
         this.paletteSidebar = new PaletteSidebar({
             $target,
@@ -41,6 +62,8 @@ export default class Palette {
             onReorderPresets,
             onColorSlotClick,
             onAddColor: () => this.colorWheelPicker.open((color) => onAddColorToPreset(color)),
+            onColorSlotContextMenu: (presetId, colorId, color, rect) =>
+                this.colorSlotContextMenu.open(presetId, colorId, color, rect),
         });
     }
 

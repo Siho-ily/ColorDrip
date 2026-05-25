@@ -120,7 +120,16 @@ export default class ColorWheelPicker {
         this.$preview.style.background = `hsl(${h}, ${s}%, ${l}%)`;
     }
 
-    open(onColorSelect: (color: HslColor) => void) {
+    open(onColorSelect: (color: HslColor) => void, initialColor?: HslColor) {
+        if (initialColor) {
+            this.$hInput.value = String(initialColor.h);
+            this.$sInput.value = String(initialColor.s);
+            this.$lInput.value = String(initialColor.l);
+            // 슬라이더 값 표시 업데이트
+            [this.$hInput, this.$sInput, this.$lInput].forEach(input => {
+                input.dispatchEvent(new Event('input'));
+            });
+        }
         this.onColorSelect = onColorSelect;
         this.$el.classList.remove('hidden');
         this.updatePreview();

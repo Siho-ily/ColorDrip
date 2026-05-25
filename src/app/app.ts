@@ -81,6 +81,11 @@ export default class App {
             onReorderPresets: (orderedIds) => this.reorderPresets(orderedIds),
             onColorSlotClick: (presetColor) => this.canvas.spawnBubble(presetColor.color),
             onAddColorToPreset: (color) => this.addColorToActivePreset(color),
+            getPresets: () => this.state.palette.presets,
+            onEditPresetColor: (presetId, colorId, newColor) => this.editPresetColor(presetId, colorId, newColor),
+            onDeletePresetColor: (presetId, colorId) => this.deletePresetColor(presetId, colorId),
+            onDuplicatePresetColor: (presetId, colorId) => this.duplicatePresetColor(presetId, colorId),
+            onMoveColorToPreset: (fromPresetId, colorId, toPresetId) => this.moveColorToPreset(fromPresetId, colorId, toPresetId),
         });
 
         this.setState(this.state);
@@ -163,6 +168,63 @@ export default class App {
                 ),
             },
         });
+    }
+
+    private editPresetColor(presetId: string, colorId: string, newColor: import('@/types/bubble').HslColor) {
+        this.setState({
+            palette: {
+                ...this.state.palette,
+                presets: this.state.palette.presets.map(p =>
+                    p.id !== presetId ? p : {
+                        ...p,
+                        colors: p.colors.map(c => c.id !== colorId ? c : { ...c, color: newColor }),
+                    }
+                ),
+            },
+        });
+    }
+
+    private deletePresetColor(presetId: string, colorId: string) {
+        this.setState({
+            palette: {
+                ...this.state.palette,
+                presets: this.state.palette.presets.map(p =>
+                    p.id !== presetId ? p : { ...p, colors: p.colors.filter(c => c.id !== colorId) }
+                ),
+            },
+        });
+    }
+
+    private duplicatePresetColor(presetId: string, colorId: string) {
+        this.setState({
+            palette: {
+                ...this.state.palette,
+                presets: this.state.palette.presets.map(p => {
+                    if (p.id !== presetId) return p;
+                    const idx = p.colors.findIndex(c => c.id === colorId);
+                    if (idx < 0) return p;
+                    const copy = { ...p.colors[idx], id: crypto.randomUUID() };
+                    const colors = [...p.colors];
+                    colors.splice(idx + 1, 0, copy);
+                    return { ...p, colors };
+                }),
+            },
+        });
+    }
+
+    private moveColorToPreset(fromPresetId: string, colorId: string, toPresetId: string) {
+        let moved: import('@/types/palette').PresetColor | undefined;
+        const presets = this.state.palette.presets
+            .map(p => {
+                if (p.id !== fromPresetId) return p;
+                moved = p.colors.find(c => c.id === colorId);
+                return { ...p, colors: p.colors.filter(c => c.id !== colorId) };
+            })
+            .map(p => {
+                if (p.id !== toPresetId || !moved) return p;
+                return { ...p, colors: [...p.colors, moved] };
+            });
+        this.setState({ palette: { ...this.state.palette, presets } });
     }
 
     private addColorToActivePreset(color: import('@/types/bubble').HslColor) {

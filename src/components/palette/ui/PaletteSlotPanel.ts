@@ -5,6 +5,7 @@
  * 프리셋이 없으면 안내 문구를 표시한다.
  */
 import type { Preset, PresetColor } from '@/types/palette';
+import type { HslColor } from '@/types/bubble';
 import { hslToCss } from '@/lib/color';
 import { attachDragScroll } from '@/lib/dragScroll';
 
@@ -13,18 +14,22 @@ export default class PaletteSlotPanel {
 
     private readonly onColorSlotClick: (presetColor: PresetColor) => void;
     private readonly onAddColor: () => void;
+    private readonly onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
 
     constructor({
         $target,
         onColorSlotClick,
         onAddColor,
+        onColorSlotContextMenu,
     }: {
         $target: HTMLElement;
         onColorSlotClick: (presetColor: PresetColor) => void;
         onAddColor: () => void;
+        onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
     }) {
         this.onColorSlotClick = onColorSlotClick;
         this.onAddColor = onAddColor;
+        this.onColorSlotContextMenu = onColorSlotContextMenu;
 
         this.$el = document.createElement('div');
         this.$el.className = [
@@ -64,6 +69,10 @@ export default class PaletteSlotPanel {
             $slot.style.background = hslToCss(pc.color);
             $slot.title = pc.label ?? hslToCss(pc.color);
             $slot.addEventListener('click', () => this.onColorSlotClick(pc));
+            $slot.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this.onColorSlotContextMenu(preset.id, pc.id, pc.color, $slot.getBoundingClientRect());
+            });
             $grid.appendChild($slot);
         });
 

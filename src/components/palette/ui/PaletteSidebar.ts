@@ -1,5 +1,6 @@
 import type { State } from '@/types/state';
 import type { PresetColor } from '@/types/palette';
+import type { HslColor } from '@/types/bubble';
 import PaletteTabBar from './PaletteTabBar';
 import PaletteSlotPanel from './PaletteSlotPanel';
 
@@ -18,6 +19,7 @@ export default class PaletteSidebar {
         onReorderPresets,
         onColorSlotClick,
         onAddColor,
+        onColorSlotContextMenu,
     }: {
         $target: HTMLElement;
         onAddPreset: () => void;
@@ -28,6 +30,7 @@ export default class PaletteSidebar {
         onReorderPresets: (orderedIds: string[]) => void;
         onColorSlotClick: (presetColor: PresetColor) => void;
         onAddColor: () => void;
+        onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
     }) {
         this.$el = document.createElement('div');
         this.$el.className = 'fixed right-0 top-0 h-full z-30 flex hidden';
@@ -47,6 +50,7 @@ export default class PaletteSidebar {
             $target: this.$el,
             onColorSlotClick,
             onAddColor,
+            onColorSlotContextMenu,
         });
     }
 
