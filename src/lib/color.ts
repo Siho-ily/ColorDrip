@@ -1,7 +1,6 @@
 import chroma from 'chroma-js';
 import type { HslColor } from '@/types/bubble';
 import type { ColorSpace } from '@/types/settings';
-import type { PresetColor } from '@/types/palette';
 
 /** mixColors에 넘기는 색상 항목. weight가 클수록 혼합 결과에서 해당 색이 차지하는 비중이 커진다. 생략하면 1. */
 export interface ColorEntry {
@@ -44,16 +43,4 @@ export function mixColors(entries: ColorEntry[], colorSpace: ColorSpace): HslCol
     // 무채색(흰색·검정·회색)은 hue가 수학적으로 정의되지 않아 NaN이 된다.
     // 0으로 대체해 HslColor 타입 제약(number)을 만족시킨다.
     return { h: h ?? 0, s: s * 100, l: l * 100 };
-}
-
-export function hslToHex(hsl: HslColor): string {
-    return chroma.hsl(hsl.h, hsl.s / 100, hsl.l / 100).hex();
-}
-
-export function hslToCss(hsl: HslColor): string {
-    return `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
-}
-
-export function createPresetColor(color: HslColor): PresetColor {
-    return { id: crypto.randomUUID(), color, label: null };
 }

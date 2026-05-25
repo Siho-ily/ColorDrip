@@ -1,13 +1,5 @@
 import type { Bubble, HslColor } from './bubble';
 import type { Settings } from './settings';
-import type { Preset } from './palette';
-
-export interface ContextMenuState {
-    open: boolean;
-    bubbleId: number | null;
-    x: number;
-    y: number;
-}
 
 export interface ContextMenuState {
     open: boolean;
@@ -17,9 +9,9 @@ export interface ContextMenuState {
 }
 
 export interface PaletteState {
-    open: boolean;
-    presets: Preset[];
-    activePresetId: string | null;
+    open: boolean;                      // 사이드바 열림 여부
+    presets: unknown[];                 // 추후 Preset 타입으로 교체 예정
+    activePresetId: string | null;      // 현재 선택된 프리셋 id, 없으면 null
 }
 
 /** ColorWheelPicker 오버레이 상태 */

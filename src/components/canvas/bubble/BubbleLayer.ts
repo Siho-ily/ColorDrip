@@ -25,30 +25,21 @@ export default class BubbleLayer {
         $target.appendChild(this.$el);
     }
 
-    addBubble(bubble: Bubble, animate?: 'pop') {
-        // outer: 위치(translate) 담당. syncPositions가 매 프레임 갱신.
-        // inner: 색상/모양/스케일 애니메이션 담당. transform 충돌 방지를 위해 분리.
-        const $outer = document.createElement('div');
-        $outer.className = 'absolute top-0 left-0 pointer-events-auto';
-        $outer.style.width = `${bubble.radius * 2}px`;
-        $outer.style.height = `${bubble.radius * 2}px`;
-        $outer.style.transform = `translate(${bubble.position.x - bubble.radius}px, ${bubble.position.y - bubble.radius}px)`;
+    addBubble(bubble: Bubble) {
+        const $div = document.createElement('div');
+        $div.className = 'absolute top-0 left-0 rounded-full pointer-events-auto';
+        $div.style.width = `${bubble.radius * 2}px`;
+        $div.style.height = `${bubble.radius * 2}px`;
+        $div.style.backgroundColor = `hsl(${bubble.color.h}, ${bubble.color.s}%, ${bubble.color.l}%)`;
+        $div.style.transform = `translate(${bubble.position.x - bubble.radius}px, ${bubble.position.y - bubble.radius}px)`;
 
-        const $inner = document.createElement('div');
-        $inner.className = 'w-full h-full rounded-full';
-        $inner.style.backgroundColor = `hsl(${bubble.color.h}, ${bubble.color.s}%, ${bubble.color.l}%)`;
-        if (animate === 'pop') {
-            $inner.style.animation = 'bubble-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
-        }
-        $outer.appendChild($inner);
-
-        $outer.addEventListener('contextmenu', (e) => {
+        $div.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            this.onBubbleContextMenu(bubble.id, $outer.getBoundingClientRect());
+            this.onBubbleContextMenu(bubble.id, $div.getBoundingClientRect());
         });
 
-        this.bubbleMap.set(bubble.id, { $el: $outer, radius: bubble.radius });
-        this.$el.appendChild($outer);
+        this.bubbleMap.set(bubble.id, { $el: $div, radius: bubble.radius });
+        this.$el.appendChild($div);
     }
 
     removeBubble(id: number) {
