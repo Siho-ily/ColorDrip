@@ -69,8 +69,9 @@ export default class BubbleCanvas {
             onPositionUpdate(updates);
         });
 
-        // $target 기준 마우스 좌표 → 물리 세계 좌표와 동일 (같은 부모 공유)
-        const mouse = Mouse.create($target);
+        // document 기준으로 마우스 이벤트를 수신해야 팔레트 등 상위 z-index 요소 위에서도
+        // 드래그가 끊기지 않는다. Canvas.$el이 inset-0이므로 좌표 오프셋은 동일.
+        const mouse = Mouse.create(document.documentElement);
         const mouseConstraint = MouseConstraint.create(this.engine, {
             mouse,
             constraint: { stiffness: 0.2, render: { visible: false } },
