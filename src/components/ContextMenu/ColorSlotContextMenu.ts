@@ -6,6 +6,7 @@ import type { Preset } from '@/types/palette';
 export default class ColorSlotContextMenu {
     private menu: ContextMenu;
     private readonly openColorPicker: (initialColor: HslColor, onConfirm: (color: HslColor) => void) => void;
+    private readonly openPresetPicker: (presets: Preset[], onSelect: (toPresetId: string) => void) => void;
     private readonly getPresets: () => Preset[];
     private readonly onEdit: (presetId: string, colorId: string, newColor: HslColor) => void;
     private readonly onDelete: (presetId: string, colorId: string) => void;
@@ -14,6 +15,7 @@ export default class ColorSlotContextMenu {
 
     constructor({
         openColorPicker,
+        openPresetPicker,
         getPresets,
         onEdit,
         onDelete,
@@ -21,6 +23,7 @@ export default class ColorSlotContextMenu {
         onMoveTo,
     }: {
         openColorPicker: (initialColor: HslColor, onConfirm: (color: HslColor) => void) => void;
+        openPresetPicker: (presets: Preset[], onSelect: (toPresetId: string) => void) => void;
         getPresets: () => Preset[];
         onEdit: (presetId: string, colorId: string, newColor: HslColor) => void;
         onDelete: (presetId: string, colorId: string) => void;
@@ -28,6 +31,7 @@ export default class ColorSlotContextMenu {
         onMoveTo: (fromPresetId: string, colorId: string, toPresetId: string) => void;
     }) {
         this.openColorPicker = openColorPicker;
+        this.openPresetPicker = openPresetPicker;
         this.getPresets = getPresets;
         this.onEdit = onEdit;
         this.onDelete = onDelete;
@@ -61,15 +65,10 @@ export default class ColorSlotContextMenu {
 
         if (otherPresets.length > 0) {
             items.push({
-                kind: 'submenu',
+                kind: 'action',
                 id: 'move-to',
                 label: '다른 프리셋으로 이동',
-                items: otherPresets.map(p => ({
-                    kind: 'action',
-                    id: `move-${p.id}`,
-                    label: p.name,
-                    onSelect: () => this.onMoveTo(presetId, colorId, p.id),
-                })),
+                onSelect: () => this.openPresetPicker(otherPresets, (toPresetId) => this.onMoveTo(presetId, colorId, toPresetId)),
             });
         }
 

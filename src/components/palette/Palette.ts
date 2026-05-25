@@ -3,10 +3,12 @@ import type { HslColor } from "@/types/bubble";
 import type { PresetColor, Preset } from "@/types/palette";
 import ColorWheelPicker from './ui/ColorWheelPicker';
 import PaletteSidebar from './ui/PaletteSidebar';
+import PresetPickerModal from './ui/PresetPickerModal';
 import ColorSlotContextMenu from '@/components/ContextMenu/ColorSlotContextMenu';
 
 export default class Palette {
     private colorWheelPicker: ColorWheelPicker;
+    private presetPickerModal: PresetPickerModal;
     private paletteSidebar: PaletteSidebar;
     private colorSlotContextMenu: ColorSlotContextMenu;
 
@@ -42,9 +44,11 @@ export default class Palette {
         onMoveColorToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void;
     }) {
         this.colorWheelPicker = new ColorWheelPicker({ $target });
+        this.presetPickerModal = new PresetPickerModal();
 
         this.colorSlotContextMenu = new ColorSlotContextMenu({
             openColorPicker: (initialColor, onConfirm) => this.colorWheelPicker.open(onConfirm, initialColor),
+            openPresetPicker: (presets, onSelect) => this.presetPickerModal.open(presets, onSelect),
             getPresets,
             onEdit: onEditPresetColor,
             onDelete: onDeletePresetColor,
