@@ -86,6 +86,7 @@ export default class App {
             onDeletePresetColor: (presetId, colorId) => this.deletePresetColor(presetId, colorId),
             onDuplicatePresetColor: (presetId, colorId) => this.duplicatePresetColor(presetId, colorId),
             onMoveColorToPreset: (fromPresetId, colorId, toPresetId) => this.moveColorToPreset(fromPresetId, colorId, toPresetId),
+            onReorderPresetColors: (presetId, newColorIds) => this.reorderPresetColors(presetId, newColorIds),
         });
 
         this.setState(this.state);
@@ -166,6 +167,24 @@ export default class App {
                         ? { ...p, colors: [...p.colors, presetColor] }
                         : p
                 ),
+            },
+        });
+    }
+
+    private reorderPresetColors(presetId: string, newColorIds: string[]) {
+        this.setState({
+            palette: {
+                ...this.state.palette,
+                presets: this.state.palette.presets.map(p => {
+                    if (p.id !== presetId) return p;
+                    const colorMap = new Map(p.colors.map(c => [c.id, c]));
+                    return {
+                        ...p,
+                        colors: newColorIds
+                            .map(id => colorMap.get(id))
+                            .filter((c): c is import('@/types/palette').PresetColor => c !== undefined),
+                    };
+                }),
             },
         });
     }

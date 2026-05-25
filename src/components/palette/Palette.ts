@@ -27,6 +27,7 @@ export default class Palette {
         onDeletePresetColor,
         onDuplicatePresetColor,
         onMoveColorToPreset,
+        onReorderPresetColors,
     }: {
         $target: HTMLElement;
         onAddPreset: () => void;
@@ -42,6 +43,7 @@ export default class Palette {
         onDeletePresetColor: (presetId: string, colorId: string) => void;
         onDuplicatePresetColor: (presetId: string, colorId: string) => void;
         onMoveColorToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void;
+        onReorderPresetColors: (presetId: string, newColorIds: string[]) => void;
     }) {
         this.colorWheelPicker = new ColorWheelPicker({ $target });
         this.presetPickerModal = new PresetPickerModal();
@@ -68,6 +70,9 @@ export default class Palette {
             onAddColor: () => this.colorWheelPicker.open((color) => onAddColorToPreset(color)),
             onColorSlotContextMenu: (presetId, colorId, color, rect) =>
                 this.colorSlotContextMenu.open(presetId, colorId, color, rect),
+            onReorderColors: onReorderPresetColors,
+            onMoveColorToPreset,
+            onDropColorToCanvas: onDeletePresetColor,
         });
     }
 

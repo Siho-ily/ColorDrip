@@ -3,11 +3,13 @@ import type { PresetColor } from '@/types/palette';
 import type { HslColor } from '@/types/bubble';
 import PaletteTabBar from './PaletteTabBar';
 import PaletteSlotPanel from './PaletteSlotPanel';
+import PaletteColorDrag from './PaletteColorDrag';
 
 export default class PaletteSidebar {
     private $el: HTMLDivElement;
     private tabBar: PaletteTabBar;
     private slotPanel: PaletteSlotPanel;
+    private colorDrag: PaletteColorDrag;
 
     constructor({
         $target,
@@ -20,6 +22,9 @@ export default class PaletteSidebar {
         onColorSlotClick,
         onAddColor,
         onColorSlotContextMenu,
+        onReorderColors,
+        onMoveColorToPreset,
+        onDropColorToCanvas,
     }: {
         $target: HTMLElement;
         onAddPreset: () => void;
@@ -31,6 +36,9 @@ export default class PaletteSidebar {
         onColorSlotClick: (presetColor: PresetColor) => void;
         onAddColor: () => void;
         onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
+        onReorderColors: (presetId: string, newColorIds: string[]) => void;
+        onMoveColorToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void;
+        onDropColorToCanvas: (presetId: string, colorId: string) => void;
     }) {
         this.$el = document.createElement('div');
         this.$el.className = 'fixed right-0 top-0 h-full z-30 flex hidden';
@@ -46,11 +54,22 @@ export default class PaletteSidebar {
             onReorderPresets,
         });
 
+        this.colorDrag = new PaletteColorDrag(
+            () => this.$el,
+            () => [...this.$el.querySelectorAll<HTMLElement>('[data-preset-id]')],
+            () => [...this.$el.querySelectorAll<HTMLElement>('[data-color-id]')],
+            onReorderColors,
+            onMoveColorToPreset,
+            onDropColorToCanvas,
+        );
+
         this.slotPanel = new PaletteSlotPanel({
             $target: this.$el,
             onColorSlotClick,
             onAddColor,
             onColorSlotContextMenu,
+            onSlotDragStart: (presetId, colorId, cssColor, $slot, e) =>
+                this.colorDrag.start(presetId, colorId, cssColor, $slot, e),
         });
     }
 

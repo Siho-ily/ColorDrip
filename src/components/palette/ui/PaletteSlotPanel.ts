@@ -15,21 +15,25 @@ export default class PaletteSlotPanel {
     private readonly onColorSlotClick: (presetColor: PresetColor) => void;
     private readonly onAddColor: () => void;
     private readonly onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
+    private readonly onSlotDragStart: (presetId: string, colorId: string, cssColor: string, $slot: HTMLElement, e: PointerEvent) => void;
 
     constructor({
         $target,
         onColorSlotClick,
         onAddColor,
         onColorSlotContextMenu,
+        onSlotDragStart,
     }: {
         $target: HTMLElement;
         onColorSlotClick: (presetColor: PresetColor) => void;
         onAddColor: () => void;
         onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
+        onSlotDragStart: (presetId: string, colorId: string, cssColor: string, $slot: HTMLElement, e: PointerEvent) => void;
     }) {
         this.onColorSlotClick = onColorSlotClick;
         this.onAddColor = onAddColor;
         this.onColorSlotContextMenu = onColorSlotContextMenu;
+        this.onSlotDragStart = onSlotDragStart;
 
         this.$el = document.createElement('div');
         this.$el.className = [
@@ -64,10 +68,39 @@ export default class PaletteSlotPanel {
             const $slot = document.createElement('button');
             $slot.className = [
                 'w-8 h-8 rounded-full border-2 border-transparent',
-                'hover:border-primary hover:scale-110 transition-all cursor-pointer',
+                'hover:border-primary hover:scale-110 transition-all cursor-grab',
             ].join(' ');
+            $slot.dataset.colorId = pc.id;
             $slot.style.background = hslToCss(pc.color);
             $slot.title = pc.label ?? hslToCss(pc.color);
+
+            // 5px 이상 움직여야 드래그 시작 — 클릭과 드래그를 구분
+            $slot.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0) return;
+                const startX = e.clientX, startY = e.clientY;
+                let dragging = false;
+
+                const onMove = (me: PointerEvent) => {
+                    if (Math.hypot(me.clientX - startX, me.clientY - startY) < 5) return;
+                    dragging = true;
+                    cleanup();
+                    this.onSlotDragStart(preset.id, pc.id, hslToCss(pc.color), $slot, me);
+                };
+                const onUp = () => cleanup();
+                const cleanup = () => {
+                    document.removeEventListener('pointermove', onMove);
+                    document.removeEventListener('pointerup', onUp);
+                };
+
+                document.addEventListener('pointermove', onMove);
+                document.addEventListener('pointerup', onUp);
+
+                // 드래그가 일어났으면 click 이벤트를 막는다
+                $slot.addEventListener('click', (ce) => {
+                    if (dragging) { ce.stopImmediatePropagation(); ce.preventDefault(); }
+                }, { once: true, capture: true });
+            });
+
             $slot.addEventListener('click', () => this.onColorSlotClick(pc));
             $slot.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
