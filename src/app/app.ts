@@ -18,12 +18,17 @@ export default class App {
     constructor({ $app }: { $app: HTMLElement }) {
         const savedPalette = loadPaletteStore();
 
+        const presets = savedPalette.presets.length > 0
+            ? savedPalette.presets
+            : [createPreset('프리셋 1')];
+        const activePresetId = savedPalette.activePresetId ?? presets[0].id;
+
         this.state = {
             ...initialState,
             palette: {
                 ...initialState.palette,
-                presets: savedPalette.presets,
-                activePresetId: savedPalette.activePresetId,
+                presets,
+                activePresetId,
                 open: true,
             },
         };
@@ -132,9 +137,10 @@ export default class App {
     }
 
     private deletePreset(presetId: string) {
-        const presets = this.state.palette.presets.filter(p => p.id !== presetId);
+        let presets = this.state.palette.presets.filter(p => p.id !== presetId);
+        if (presets.length === 0) presets = [createPreset('프리셋 1')];
         const activePresetId = this.state.palette.activePresetId === presetId
-            ? (presets[0]?.id ?? null)
+            ? presets[0].id
             : this.state.palette.activePresetId;
         this.setState({ palette: { ...this.state.palette, presets, activePresetId } });
     }
