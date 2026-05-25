@@ -24,5 +24,6 @@ export type ColorSpace = 'rgb' | 'hsl' | 'hsv' | 'hsi' | 'lab' | 'lch' | 'oklch'
 export interface Settings {
     colorSpace: ColorSpace;     // 색상 혼합에 사용할 색 공간
     showHexAlways: boolean;     // 버블에 hex 코드를 항상 표시할지 여부
+    darkMode: boolean;          // 다크 모드
     rain: RainSettings;         // 비 관련 세부 설정
 }
