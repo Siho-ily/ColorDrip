@@ -1,5 +1,4 @@
-import type { Preset, PresetColor, PaletteStore } from '@/types/palette';
-import type { HslColor } from '@/types/bubble';
+import type { Preset, PaletteStore } from '@/types/palette';
 
 const KEY = 'lco_presets';
 
@@ -21,6 +20,3 @@ export function createPreset(name: string): Preset {
     return { id: crypto.randomUUID(), name, colors: [] };
 }
 
-export function createPresetColor(color: HslColor): PresetColor {
-    return { id: crypto.randomUUID(), color, label: null };
-}

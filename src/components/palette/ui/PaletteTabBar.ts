@@ -179,6 +179,7 @@ export default class PaletteTabBar {
 
         // --- 재정렬 상태 ---
         let dragEl: HTMLElement | null = null;
+        let cachedTabEls: HTMLElement[] = [];
         let originalIndex = -1;  // 드래그 시작 시 탭의 인덱스
         let targetIndex = -1;    // 현재 드롭 목표 인덱스
         let dragStartY = 0;
@@ -262,7 +263,7 @@ export default class PaletteTabBar {
 
             if (newTarget !== targetIndex) {
                 targetIndex = newTarget;
-                getTabEls().forEach((t, i) => {
+                cachedTabEls.forEach((t, i) => {
                     if (t === dragEl) return;
                     let offset = 0;
                     if (originalIndex < targetIndex && i > originalIndex && i <= targetIndex) offset = -slotHeight;
@@ -299,15 +300,15 @@ export default class PaletteTabBar {
                 dragStartY = e.clientY;
                 dragStartScrollTop = $el.scrollTop;
                 lastPointerEvent = e;
-                const tabs = getTabEls();
-                originalIndex = tabs.indexOf(tab);
+                cachedTabEls = getTabEls();
+                originalIndex = cachedTabEls.indexOf(tab);
                 targetIndex = originalIndex;
-                originCenters = tabs.map(t => {
+                originCenters = cachedTabEls.map(t => {
                     const r = t.getBoundingClientRect();
                     return r.top + r.height / 2;
                 });
                 // 인접한 두 탭의 중심 거리 = 실제 슬롯 높이
-                if (tabs.length > 1) slotHeight = originCenters[1] - originCenters[0];
+                if (cachedTabEls.length > 1) slotHeight = originCenters[1] - originCenters[0];
                 // 드래그 탭이 첫 번째/마지막 슬롯을 넘지 못하도록 정적 프레임 변위 범위를 계산.
                 minDy = originCenters[0] - originCenters[originalIndex];
                 maxDy = originCenters[originCenters.length - 1] - originCenters[originalIndex];
@@ -335,7 +336,7 @@ export default class PaletteTabBar {
                     dragEl.style.transition = 'none';
                     // 다른 탭들에 transition을 부여한다. 이후 style.transform 변경 시 브라우저가
                     // 현재 시각적 위치에서 새 목표로 자동 전환한다 (인터럽트도 자동 처리).
-                    getTabEls().forEach(t => {
+                    cachedTabEls.forEach(t => {
                         if (t !== dragEl) t.style.transition = 'transform 180ms cubic-bezier(0.2, 0, 0, 1)';
                     });
                 }
@@ -379,11 +380,10 @@ export default class PaletteTabBar {
             if (dragEl) {
                 if ($el.hasPointerCapture(e.pointerId)) $el.releasePointerCapture(e.pointerId);
                 if (reordering) {
-                    const tabs = getTabEls();
-                    resetDragStyles(tabs);
+                    resetDragStyles(cachedTabEls);
                     if (targetIndex !== originalIndex) {
                         // DOM 순서를 바꾸지 않았으므로 가상으로 splice해서 새 순서를 만든다.
-                        const newOrder = [...tabs];
+                        const newOrder = [...cachedTabEls];
                         newOrder.splice(originalIndex, 1);        // 원래 위치에서 제거
                         newOrder.splice(targetIndex, 0, dragEl);  // 목표 위치에 삽입
                         this.onReorderPresets(newOrder.map(t => t.dataset.presetId!));
@@ -402,7 +402,7 @@ export default class PaletteTabBar {
             stopAutoScroll();
             if (dragEl) {
                 if ($el.hasPointerCapture(e.pointerId)) $el.releasePointerCapture(e.pointerId);
-                resetDragStyles(getTabEls());
+                resetDragStyles(cachedTabEls);
                 dragEl = null;
                 lastPointerEvent = null;
             } else if (scrollActive) {

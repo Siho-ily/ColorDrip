@@ -29,7 +29,6 @@ export default class App {
                 ...initialState.palette,
                 presets,
                 activePresetId,
-                open: true,
             },
         };
 
@@ -93,16 +92,19 @@ export default class App {
     }
 
     setState(nextState: Partial<State>) {
+        const prevPalette = this.state.palette;
         this.state = { ...this.state, ...nextState };
         this.backgroundLayer.setState(this.state);
         this.canvas.setState(this.state);
         this.paletteContextMenu.setState(this.state);
-        this.palette.setState(this.state);
 
-        savePaletteStore({
-            presets: this.state.palette.presets,
-            activePresetId: this.state.palette.activePresetId,
-        });
+        if (this.state.palette !== prevPalette) {
+            this.palette.setState(this.state);
+            savePaletteStore({
+                presets: this.state.palette.presets,
+                activePresetId: this.state.palette.activePresetId,
+            });
+        }
     }
 
     private addPreset() {
@@ -152,23 +154,9 @@ export default class App {
     }
 
     private saveToActivePreset(bubbleId: number) {
-        const { activePresetId, presets } = this.state.palette;
-        if (!activePresetId) return;
-
         const bubble = this.state.bubbles.find(b => b.id === bubbleId);
         if (!bubble) return;
-
-        const presetColor = createPresetColor(bubble.color);
-        this.setState({
-            palette: {
-                ...this.state.palette,
-                presets: presets.map(p =>
-                    p.id === activePresetId
-                        ? { ...p, colors: [...p.colors, presetColor] }
-                        : p
-                ),
-            },
-        });
+        this.addColorToActivePreset(bubble.color);
     }
 
     private reorderPresetColors(presetId: string, newColorIds: string[]) {
