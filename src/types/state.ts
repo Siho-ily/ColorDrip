@@ -9,13 +9,6 @@ export interface ContextMenuState {
     y: number;
 }
 
-export interface ContextMenuState {
-    open: boolean;
-    bubbleId: number | null;
-    x: number;
-    y: number;
-}
-
 export interface PaletteState {
     open: boolean;
     presets: Preset[];

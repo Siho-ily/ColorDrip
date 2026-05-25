@@ -41,7 +41,7 @@ export default class PaletteSidebar {
         onDropColorToCanvas: (presetId: string, colorId: string) => void;
     }) {
         this.$el = document.createElement('div');
-        this.$el.className = 'fixed right-0 top-0 h-full z-30 flex hidden';
+        this.$el.className = 'fixed right-0 top-0 h-full z-30 flex translate-x-full pointer-events-none transition-transform duration-200 ease-out';
         $target.appendChild(this.$el);
 
         this.tabBar = new PaletteTabBar({
@@ -77,9 +77,9 @@ export default class PaletteSidebar {
         const { open, presets, activePresetId } = state.palette;
 
         if (open) {
-            this.$el.classList.remove('hidden');
+            this.$el.classList.remove('translate-x-full', 'pointer-events-none');
         } else {
-            this.$el.classList.add('hidden');
+            this.$el.classList.add('translate-x-full', 'pointer-events-none');
             return;
         }
 
