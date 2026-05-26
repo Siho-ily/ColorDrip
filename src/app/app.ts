@@ -85,7 +85,7 @@ export default class App {
             $target: $app,
             initSettings: this.state.settings,
             onChange: (settings: Settings) => this.setState({ settings }),
-            onOpenChange: (open) => this.menuBar.setSettingsActive(open),
+            onOpenChange: (open) => this.menuBar?.setSettingsActive(open),
         });
 
         this.menuBar = new MenuBar({
@@ -98,6 +98,7 @@ export default class App {
                 settings: { ...this.state.settings, darkMode: !this.state.settings.darkMode },
             }),
             onSettingsToggle: (anchorRect) => this.settingsPanel.toggle(anchorRect),
+            getOccupiedRightWidth: () => this.palette.getOccupiedWidth(),
         });
 
         this.setState(this.state);
@@ -109,9 +110,9 @@ export default class App {
         document.body.classList.toggle('dark', this.state.settings.darkMode);
         this.backgroundLayer.setState(this.state);
         this.canvas.setState(this.state);
-        this.menuBar.setState(this.state);
-        this.settingsPanel.setState(this.state.settings);
 
+        // palette.setState가 menuBar.setState보다 먼저 실행되어야 한다.
+        // menuBar가 점유 너비를 측정할 때 PaletteSidebar의 translate 클래스가 이미 갱신된 상태여야 정확한 값이 나온다.
         if (this.state.palette !== prevPalette) {
             this.palette.setState(this.state);
             savePaletteStore({
@@ -119,6 +120,9 @@ export default class App {
                 activePresetId: this.state.palette.activePresetId,
             });
         }
+
+        this.menuBar.setState(this.state);
+        this.settingsPanel.setState(this.state.settings);
     }
 
     private addPreset() {

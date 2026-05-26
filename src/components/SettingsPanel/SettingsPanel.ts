@@ -14,6 +14,7 @@ const COLOR_SPACES: { value: ColorSpace; label: string }[] = [
 
 export default class SettingsPanel {
     private $el: HTMLDivElement;
+    private $anchor: HTMLElement | null = null;
     private isOpen = false;
     private settings: Settings;
     private readonly onChange: (s: Settings) => void;
@@ -48,15 +49,21 @@ export default class SettingsPanel {
 
         $target.appendChild(this.$el);
 
+        // anchor(설정 버튼) 위 클릭은 무시한다.
+        // 무시하지 않으면 capture 단계 pointerdown이 먼저 close()를 호출하고,
+        // 직후 버튼 click이 toggle()을 호출해 다시 열려버리는 버그가 생긴다.
         document.addEventListener('pointerdown', (e) => {
-            if (this.isOpen && !this.$el.contains(e.target as Node)) {
-                this.close();
-            }
+            if (!this.isOpen) return;
+            const t = e.target as Node;
+            if (this.$el.contains(t)) return;
+            if (this.$anchor?.contains(t)) return;
+            this.close();
         }, { capture: true });
     }
 
-    toggle(anchorRect: DOMRect) {
-        this.isOpen ? this.close() : this.open(anchorRect);
+    toggle(anchor: HTMLElement) {
+        this.$anchor = anchor;
+        this.isOpen ? this.close() : this.open(anchor.getBoundingClientRect());
     }
 
     setState(settings: Settings) {

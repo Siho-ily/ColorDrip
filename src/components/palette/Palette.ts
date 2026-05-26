@@ -80,4 +80,8 @@ export default class Palette {
         this.colorWheelPicker.setState(nextState);
         this.paletteSidebar.setState(nextState);
     }
+
+    getOccupiedWidth(): number {
+        return this.paletteSidebar.getOccupiedWidth();
+    }
 }
