@@ -1,9 +1,9 @@
-import { BackgroundLayer, Canvas, Palette } from '@/components/index';
+import { BackgroundLayer, Canvas, Palette, MenuBar, SettingsPanel } from '@/components/index';
 import type { State } from '@/types/state';
 import type { Preset } from '@/types/palette';
+import type { Settings } from '@/types/settings';
 import initialState from '@/data/state';
 import BubbleContextMenu from '../components/ContextMenu/BubbleContextMenu';
-import PaletteContextMenu from '../components/ContextMenu/PaletteContextMenu';
 import { loadPaletteStore, savePaletteStore, createPreset } from '@/lib/paletteStorage';
 import { createPresetColor } from '@/lib/color';
 
@@ -12,8 +12,9 @@ export default class App {
     private backgroundLayer: BackgroundLayer;
     private canvas: Canvas;
     private bubbleContextMenu: BubbleContextMenu;
-    private paletteContextMenu: PaletteContextMenu;
     private palette: Palette;
+    private menuBar: MenuBar;
+    private settingsPanel: SettingsPanel;
 
     constructor({ $app }: { $app: HTMLElement }) {
         const savedPalette = loadPaletteStore();
@@ -53,14 +54,6 @@ export default class App {
             },
         });
 
-        this.paletteContextMenu = new PaletteContextMenu({
-            $target: $app,
-            onToggle: () => this.setState({
-                palette: { ...this.state.palette, open: !this.state.palette.open },
-            }),
-            getState: () => this.state,
-        });
-
         this.palette = new Palette({
             $target: $app,
             onAddPreset: () => this.addPreset(),
@@ -88,16 +81,38 @@ export default class App {
             onReorderPresetColors: (presetId, newColorIds) => this.reorderPresetColors(presetId, newColorIds),
         });
 
+        this.settingsPanel = new SettingsPanel({
+            $target: $app,
+            initSettings: this.state.settings,
+            onChange: (settings: Settings) => this.setState({ settings }),
+            onOpenChange: (open) => this.menuBar?.setSettingsActive(open),
+        });
+
+        this.menuBar = new MenuBar({
+            $target: $app,
+            onRainToggle: () => this.setState({ rainMode: !this.state.rainMode }),
+            onPaletteToggle: () => this.setState({
+                palette: { ...this.state.palette, open: !this.state.palette.open },
+            }),
+            onDarkModeToggle: () => this.setState({
+                settings: { ...this.state.settings, darkMode: !this.state.settings.darkMode },
+            }),
+            onSettingsToggle: (anchorRect) => this.settingsPanel.toggle(anchorRect),
+            getOccupiedRightWidth: () => this.palette.getOccupiedWidth(),
+        });
+
         this.setState(this.state);
     }
 
     setState(nextState: Partial<State>) {
         const prevPalette = this.state.palette;
         this.state = { ...this.state, ...nextState };
+        document.body.classList.toggle('dark', this.state.settings.darkMode);
         this.backgroundLayer.setState(this.state);
         this.canvas.setState(this.state);
-        this.paletteContextMenu.setState(this.state);
 
+        // palette.setState가 menuBar.setState보다 먼저 실행되어야 한다.
+        // menuBar가 점유 너비를 측정할 때 PaletteSidebar의 translate 클래스가 이미 갱신된 상태여야 정확한 값이 나온다.
         if (this.state.palette !== prevPalette) {
             this.palette.setState(this.state);
             savePaletteStore({
@@ -105,6 +120,9 @@ export default class App {
                 activePresetId: this.state.palette.activePresetId,
             });
         }
+
+        this.menuBar.setState(this.state);
+        this.settingsPanel.setState(this.state.settings);
     }
 
     private addPreset() {

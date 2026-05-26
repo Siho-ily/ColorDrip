@@ -86,4 +86,11 @@ export default class PaletteSidebar {
         this.tabBar.render(presets, activePresetId);
         this.slotPanel.render(presets.find(p => p.id === activePresetId) ?? null);
     }
+
+    // 팔레트가 화면 우측에서 차지하는 픽셀 너비. 닫혀 있으면 0.
+    // translate-x-full로 화면 밖에 밀려나 있어도 offsetWidth는 그대로라 classList로 판단한다.
+    getOccupiedWidth(): number {
+        if (this.$el.classList.contains('translate-x-full')) return 0;
+        return this.$el.offsetWidth;
+    }
 }
