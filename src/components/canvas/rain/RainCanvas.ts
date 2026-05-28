@@ -1,7 +1,7 @@
 import Matter from 'matter-js';
 import type { State } from '@/types/state';
 import type { Bubble, HslColor } from '@/types/bubble';
-import RainDrop, { drawTeardrop } from './RainDrop';
+import RainDrop, { drawTeardrop, rotationFromVelocity } from './RainDrop';
 import {
     GRAVITY,
     TOLERANCE,
@@ -47,7 +47,7 @@ export default class RainCanvas {
     private drops = new Map<number, RainDrop>();
 
     // catch된 물방울의 퇴장 애니메이션 목록. 물리 body 제거 후에도 시각적으로 fade+shrink
-    private exitingDrops: { x: number; y: number; radius: number; color: HslColor; startTime: number }[] = [];
+    private exitingDrops: { x: number; y: number; radius: number; color: HslColor; rotation: number; startTime: number }[] = [];
     private static readonly EXIT_DURATION = 280; // ms
 
     constructor({
@@ -96,7 +96,7 @@ export default class RainCanvas {
                 if (t >= 1) return false;
                 ctx.save();
                 ctx.globalAlpha = 1 - t;                // 선형 페이드
-                drawTeardrop(ctx, e.x, e.y, e.radius * (1 - t), e.color);  // 선형 축소
+                drawTeardrop(ctx, e.x, e.y, e.radius * (1 - t), e.color, e.rotation);  // 선형 축소
                 ctx.restore();
                 return true;
             });
@@ -138,12 +138,13 @@ export default class RainCanvas {
 
             this.onBubbleCatch(bubble);
 
-            // 퇴장 애니메이션: 현재 위치/크기/색상을 캡처해 exitingDrops에 등록
+            // 퇴장 애니메이션: 현재 위치/크기/색상/회전각을 캡처해 exitingDrops에 등록
             this.exitingDrops.push({
                 x: hit.position.x,
                 y: hit.position.y,
                 radius: drop.radius,
                 color: drop.color,
+                rotation: rotationFromVelocity(hit.velocity.x, hit.velocity.y),
                 startTime: performance.now(),
             });
 

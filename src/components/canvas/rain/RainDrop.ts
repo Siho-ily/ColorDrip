@@ -21,6 +21,10 @@ const RAINDROP_PATH_CY   = 164.3;      // 원형 부분 중심 Y (적도선 y좌
 /**
  * 물방울 실루엣을 canvas에 그리는 공유 함수.
  * RainDrop 인스턴스뿐 아니라 RainCanvas의 퇴장 애니메이션에서도 재사용한다.
+ *
+ * rotation: 라디안. 0 = 수직 낙하 자세(꼬리 위/구체 아래).
+ *   양수일수록 시계 방향으로 회전하므로, velocity 기반으로 Math.atan2(vx, vy)를 넘기면
+ *   진행 방향으로 자연스럽게 기울어진다.
  */
 export function drawTeardrop(
     ctx: CanvasRenderingContext2D,
@@ -28,15 +32,23 @@ export function drawTeardrop(
     y: number,
     r: number,
     color: HslColor,
+    rotation: number = 0,
 ) {
     const s = (r * 2) / RAINDROP_PATH_WIDTH;
     ctx.save();
     ctx.translate(x, y);
+    ctx.rotate(rotation);
     ctx.scale(s, s);
     ctx.translate(-RAINDROP_PATH_CX, -RAINDROP_PATH_CY);
     ctx.fillStyle = hslToCss(color);
     ctx.fill(RAINDROP_SHAPE);
     ctx.restore();
+}
+
+/** velocity 벡터로부터 빗방울 회전 각도 계산. vy=0이고 vx=0이면 0 반환 */
+export function rotationFromVelocity(vx: number, vy: number): number {
+    if (vx === 0 && vy === 0) return 0;
+    return Math.atan2(vx, vy);
 }
 
 /** Matter.js body 하나와 그 시각 표현을 함께 관리하는 빗방울 단위 컴포넌트 */
@@ -81,6 +93,14 @@ export default class RainDrop {
 
     /** RainCanvas의 afterRender 이벤트에서 매 프레임 호출된다 */
     draw(ctx: CanvasRenderingContext2D) {
-        drawTeardrop(ctx, this.body.position.x, this.body.position.y, this.radius, this.color);
+        const { x: vx, y: vy } = this.body.velocity;
+        drawTeardrop(
+            ctx,
+            this.body.position.x,
+            this.body.position.y,
+            this.radius,
+            this.color,
+            rotationFromVelocity(vx, vy),
+        );
     }
 }
