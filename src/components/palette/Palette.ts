@@ -1,6 +1,7 @@
 import type { State } from "@/types/state";
 import type { HslColor } from "@/types/bubble";
 import type { PresetColor, Preset } from "@/types/palette";
+import type { ColorNotation } from "@/types/settings";
 import ColorWheelPicker from './ui/ColorWheelPicker';
 import PaletteSidebar from './ui/PaletteSidebar';
 import PresetPickerModal from './ui/PresetPickerModal';
@@ -11,6 +12,7 @@ export default class Palette {
     private presetPickerModal: PresetPickerModal;
     private paletteSidebar: PaletteSidebar;
     private colorSlotContextMenu: ColorSlotContextMenu;
+    private colorNotation: ColorNotation = 'hex';
 
     constructor({
         $target,
@@ -73,10 +75,12 @@ export default class Palette {
             onReorderColors: onReorderPresetColors,
             onMoveColorToPreset,
             onDropColorToCanvas: onDeletePresetColor,
+            getColorNotation: () => this.colorNotation,
         });
     }
 
     setState(nextState: State) {
+        this.colorNotation = nextState.settings.colorNotation;
         this.colorWheelPicker.setState(nextState);
         this.paletteSidebar.setState(nextState);
     }

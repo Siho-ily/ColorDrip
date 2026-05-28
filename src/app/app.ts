@@ -151,8 +151,10 @@ export default class App {
 
         // palette.setState가 menuBar.setState보다 먼저 실행되어야 한다.
         // menuBar가 점유 너비를 측정할 때 PaletteSidebar의 translate 클래스가 이미 갱신된 상태여야 정확한 값이 나온다.
+        // palette는 colorNotation 같은 설정도 보유하므로 매 setState마다 호출하고,
+        // 저장(side effect)만 palette 상태가 실제로 바뀌었을 때만 수행한다.
+        this.palette.setState(this.state);
         if (this.state.palette !== prevPalette) {
-            this.palette.setState(this.state);
             savePaletteStore({
                 presets: this.state.palette.presets,
                 activePresetId: this.state.palette.activePresetId,

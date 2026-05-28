@@ -6,8 +6,10 @@
  */
 import type { Preset, PresetColor } from '@/types/palette';
 import type { HslColor } from '@/types/bubble';
-import { hslToCss } from '@/lib/color';
+import type { ColorNotation } from '@/types/settings';
+import { hslToCss, formatColor } from '@/lib/color';
 import { attachDragScroll } from '@/lib/dragScroll';
+import { showTooltip, hideTooltip, moveTooltip } from '@/components/global/ui/ColorTooltip';
 
 export default class PaletteSlotPanel {
     private $el: HTMLDivElement;
@@ -16,6 +18,7 @@ export default class PaletteSlotPanel {
     private readonly onAddColor: () => void;
     private readonly onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
     private readonly onSlotDragStart: (presetId: string, colorId: string, cssColor: string, $slot: HTMLElement, e: PointerEvent) => void;
+    private readonly getColorNotation: () => ColorNotation;
 
     constructor({
         $target,
@@ -23,17 +26,20 @@ export default class PaletteSlotPanel {
         onAddColor,
         onColorSlotContextMenu,
         onSlotDragStart,
+        getColorNotation,
     }: {
         $target: HTMLElement;
         onColorSlotClick: (presetColor: PresetColor) => void;
         onAddColor: () => void;
         onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
         onSlotDragStart: (presetId: string, colorId: string, cssColor: string, $slot: HTMLElement, e: PointerEvent) => void;
+        getColorNotation: () => ColorNotation;
     }) {
         this.onColorSlotClick = onColorSlotClick;
         this.onAddColor = onAddColor;
         this.onColorSlotContextMenu = onColorSlotContextMenu;
         this.onSlotDragStart = onSlotDragStart;
+        this.getColorNotation = getColorNotation;
 
         this.$el = document.createElement('div');
         this.$el.className = [
@@ -72,7 +78,14 @@ export default class PaletteSlotPanel {
             ].join(' ');
             $slot.dataset.colorId = pc.id;
             $slot.style.background = hslToCss(pc.color);
-            $slot.title = pc.label ?? hslToCss(pc.color);
+
+            // 호버 시 표기 방식에 맞춰 커스텀 툴팁 표시 (label이 있으면 우선)
+            $slot.addEventListener('pointerenter', (e) => {
+                const text = pc.label ?? formatColor(pc.color, this.getColorNotation());
+                showTooltip(text, e.clientX, e.clientY);
+            });
+            $slot.addEventListener('pointermove', (e) => moveTooltip(e.clientX, e.clientY));
+            $slot.addEventListener('pointerleave', () => hideTooltip());
 
             // 5px 이상 움직여야 드래그 시작 — 클릭과 드래그를 구분
             $slot.addEventListener('pointerdown', (e) => {

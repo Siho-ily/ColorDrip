@@ -1,6 +1,7 @@
 import type { State } from '@/types/state';
 import type { PresetColor } from '@/types/palette';
 import type { HslColor } from '@/types/bubble';
+import type { ColorNotation } from '@/types/settings';
 import PaletteTabBar from './PaletteTabBar';
 import PaletteSlotPanel from './PaletteSlotPanel';
 import PaletteColorDrag from './PaletteColorDrag';
@@ -25,6 +26,7 @@ export default class PaletteSidebar {
         onReorderColors,
         onMoveColorToPreset,
         onDropColorToCanvas,
+        getColorNotation,
     }: {
         $target: HTMLElement;
         onAddPreset: () => void;
@@ -39,6 +41,7 @@ export default class PaletteSidebar {
         onReorderColors: (presetId: string, newColorIds: string[]) => void;
         onMoveColorToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void;
         onDropColorToCanvas: (presetId: string, colorId: string) => void;
+        getColorNotation: () => ColorNotation;
     }) {
         this.$el = document.createElement('div');
         this.$el.className = 'fixed right-0 top-0 h-full z-30 flex translate-x-full pointer-events-none transition-transform duration-200 ease-out';
@@ -70,6 +73,7 @@ export default class PaletteSidebar {
             onColorSlotContextMenu,
             onSlotDragStart: (presetId, colorId, cssColor, $slot, e) =>
                 this.colorDrag.start(presetId, colorId, cssColor, $slot, e),
+            getColorNotation,
         });
     }
 

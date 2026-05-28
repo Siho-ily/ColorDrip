@@ -1,5 +1,8 @@
 import { animate as motionAnimate } from 'motion';
 import type { Bubble } from '@/types/bubble';
+import type { ColorNotation } from '@/types/settings';
+import { formatColor } from '@/lib/color';
+import { showTooltip, hideTooltip, moveTooltip } from '@/components/global/ui/ColorTooltip';
 
 /**
  * 버블의 시각적 렌더링을 담당하는 DOM 레이어.
@@ -13,18 +16,22 @@ export default class BubbleLayer {
     private bubbleMap = new Map<number, { $el: HTMLDivElement; radius: number }>();
     private readonly onBubbleClick: (id: number, additive: boolean) => void;
     private readonly onBubbleContextMenu: (id: number, bubbleRect: DOMRect, point: { x: number; y: number }) => void;
+    private readonly getColorNotation: () => ColorNotation;
 
     constructor({
         $target,
         onBubbleClick,
         onBubbleContextMenu,
+        getColorNotation,
     }: {
         $target: HTMLElement;
         onBubbleClick: (id: number, additive: boolean) => void;
         onBubbleContextMenu: (id: number, bubbleRect: DOMRect, point: { x: number; y: number }) => void;
+        getColorNotation: () => ColorNotation;
     }) {
         this.onBubbleClick = onBubbleClick;
         this.onBubbleContextMenu = onBubbleContextMenu;
+        this.getColorNotation = getColorNotation;
         this.$el = document.createElement('div');
         this.$el.className = 'absolute inset-0 pointer-events-none';
         $target.appendChild(this.$el);
@@ -62,6 +69,13 @@ export default class BubbleLayer {
             e.preventDefault();
             this.onBubbleContextMenu(bubble.id, $outer.getBoundingClientRect(), { x: e.clientX, y: e.clientY });
         });
+
+        // hover 시 표기 방식에 맞춰 색상 코드 표시
+        $outer.addEventListener('pointerenter', (e) => {
+            showTooltip(formatColor(bubble.color, this.getColorNotation()), e.clientX, e.clientY);
+        });
+        $outer.addEventListener('pointermove', (e) => moveTooltip(e.clientX, e.clientY));
+        $outer.addEventListener('pointerleave', () => hideTooltip());
 
         this.bubbleMap.set(bubble.id, { $el: $outer, radius: bubble.radius });
         this.$el.appendChild($outer);

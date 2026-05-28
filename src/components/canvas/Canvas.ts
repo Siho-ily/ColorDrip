@@ -51,7 +51,12 @@ export default class Canvas {
         this.state = { ...initState };
         this.onBubbleCatch = onBubbleCatch;
 
-        this.bubbleLayer = new BubbleLayer({ $target: this.$el, onBubbleClick, onBubbleContextMenu });
+        this.bubbleLayer = new BubbleLayer({
+            $target: this.$el,
+            onBubbleClick,
+            onBubbleContextMenu,
+            getColorNotation: () => this.state.settings.colorNotation,
+        });
 
         this.bubbleCanvas = new BubbleCanvas({
             $target: this.$el,
