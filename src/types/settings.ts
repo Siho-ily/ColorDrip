@@ -1,8 +1,12 @@
 export interface RainSettings {
     speed: number;      // 방울 낙하 속도 (1–20)
     density: number;    // 방울 생성 빈도 (1–20)
-    size: number;       // 방울/버블 크기 (1–20)
+    size: number;       // 방울 크기 (1–20)
     wind: number;       // 바람 수평 속도 (px/frame). 양수 = 오른쪽, 음수 = 왼쪽
+}
+
+export interface BubbleSettings {
+    size: number;       // 버블 크기 (1–20). 빗방울 크기와는 독립적으로 조절된다
 }
 
 /**
@@ -26,4 +30,5 @@ export interface Settings {
     showHexAlways: boolean;     // 버블에 hex 코드를 항상 표시할지 여부
     darkMode: boolean;          // 다크 모드
     rain: RainSettings;         // 비 관련 세부 설정
+    bubble: BubbleSettings;     // 버블 관련 세부 설정
 }

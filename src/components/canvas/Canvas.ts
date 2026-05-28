@@ -74,6 +74,10 @@ export default class Canvas {
             $target: this.$el,
             initState: this.state,
             onBubbleCatch: (bubble) => {
+                // 캐치된 빗방울은 bubble.size 기준으로 즉시 변환된다.
+                // 빗방울 크기(rain.size)와 버블 크기(bubble.size)가 독립적으로 조절될 수 있으므로
+                // catch 결과가 항상 bubble.size를 따르도록 radius를 덮어쓴다.
+                bubble.radius = radiusFromSize(this.state.settings.bubble.size);
                 this.bubbleLayer.addBubble(bubble, 'spring');
                 this.bubbleCanvas.addBubble(bubble);
                 onBubbleCatch(bubble);
@@ -149,7 +153,7 @@ export default class Canvas {
         const width = this.$el.clientWidth;
         const height = this.$el.clientHeight;
 
-        const radius = radiusFromSize(this.state.settings.rain.size);
+        const radius = radiusFromSize(this.state.settings.bubble.size);
         const margin = radius + 20;
         const x = margin + Math.random() * Math.max(0, width - margin * 2);
         const y = margin + Math.random() * Math.max(0, height - margin * 2);
@@ -177,9 +181,9 @@ export default class Canvas {
         this.state = { ...this.state, ...nextState };
         this.rainCanvas.setState(this.state);
 
-        // size 변경 시 기존 버블 물리 body + DOM 크기 동기화
-        if (prev.settings.rain.size !== this.state.settings.rain.size) {
-            const newRadius = radiusFromSize(this.state.settings.rain.size);
+        // bubble.size 변경 시 기존 버블 물리 body + DOM 크기 동기화
+        if (prev.settings.bubble.size !== this.state.settings.bubble.size) {
+            const newRadius = radiusFromSize(this.state.settings.bubble.size);
             this.state.bubbles.forEach(b => {
                 this.bubbleCanvas.resizeBubble(b.id, newRadius);
                 this.bubbleLayer.resizeBubble(b.id, newRadius);

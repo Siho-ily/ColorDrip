@@ -18,7 +18,8 @@ const initialState: State = {
         colorSpace: 'hsl',
         showHexAlways: false,
         darkMode: false,
-        rain: { speed: 10, density: 10, size: 10, wind: 2.5 },
+        rain: { speed: 10, density: 10, size: 5, wind: 2.5 },
+        bubble: { size: 5 },
     },
     ui: {
         visible: false,

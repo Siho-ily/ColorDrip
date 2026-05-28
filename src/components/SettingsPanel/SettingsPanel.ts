@@ -128,6 +128,10 @@ export default class SettingsPanel {
         this.appendSlider('바람', this.settings.rain.wind, -10, 10, 0.5, v =>
             this.emit({ rain: { ...this.settings.rain, wind: v } }));
 
+        this.appendSectionLabel('버블');
+        this.appendSlider('크기', this.settings.bubble.size, 1, 20, 1, v =>
+            this.emit({ bubble: { ...this.settings.bubble, size: v } }));
+
         this.appendSectionLabel('색상 혼합');
         this.appendColorSpaceSelect();
         this.appendToggle('Hex 항상 표시', this.settings.showHexAlways, v =>

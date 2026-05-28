@@ -134,12 +134,12 @@ export default class App {
 
     setState(nextState: Partial<State>) {
         const prevPalette = this.state.palette;
-        const prevSize = this.state.settings.rain.size;
+        const prevBubbleSize = this.state.settings.bubble.size;
         this.state = { ...this.state, ...nextState };
 
-        // size 변경 시 state.bubbles 반지름 동기화 (duplicateBubble 등이 올바른 반지름을 참조하도록)
-        if (this.state.settings.rain.size !== prevSize) {
-            const newRadius = radiusFromSize(this.state.settings.rain.size);
+        // bubble.size 변경 시 state.bubbles 반지름 동기화 (duplicateBubble 등이 올바른 반지름을 참조하도록)
+        if (this.state.settings.bubble.size !== prevBubbleSize) {
+            const newRadius = radiusFromSize(this.state.settings.bubble.size);
             this.state = {
                 ...this.state,
                 bubbles: this.state.bubbles.map(b => ({ ...b, radius: newRadius })),
