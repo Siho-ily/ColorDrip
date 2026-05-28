@@ -48,6 +48,7 @@ export default class App {
             getState:   () => this.state,
             setState:   (next) => this.setState(next),
             onSaveToPreset: (bubbleId) => this.saveToActivePreset(bubbleId),
+            onDuplicate: (bubbleId) => this.canvas.duplicateBubble(bubbleId),
         });
 
         this.selectionContextMenu = new SelectionContextMenu({

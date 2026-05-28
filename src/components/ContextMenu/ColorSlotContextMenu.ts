@@ -1,3 +1,4 @@
+import chroma from 'chroma-js';
 import ContextMenu from '@/components/ContextMenu/ContextMenu';
 import type { MenuItemDef } from '@/types/menu';
 import type { HslColor } from '@/types/bubble';
@@ -48,7 +49,29 @@ export default class ColorSlotContextMenu {
     private buildItems(presetId: string, colorId: string, color: HslColor): MenuItemDef[] {
         const otherPresets = this.getPresets().filter(p => p.id !== presetId);
 
+        const { h, s, l } = color;
+        const c = chroma.hsl(h, s / 100, l / 100);
+        const hex    = c.hex();
+        const [r, g, b] = c.rgb().map(Math.round);
+        const [hh, ss, ll] = c.hsl();
+        const [ol, oc, oh] = c.oklch();
+        const rgbStr   = `rgb(${r}, ${g}, ${b})`;
+        const hslStr   = `hsl(${Math.round(hh)} ${Math.round(ss * 100)}% ${Math.round(ll * 100)}%)`;
+        const oklchStr = `oklch(${(ol * 100).toFixed(1)}% ${oc.toFixed(3)} ${(oh ?? 0).toFixed(1)})`;
+
         const items: MenuItemDef[] = [
+            {
+                kind: 'submenu',
+                id: 'copy',
+                label: '색상 복사',
+                items: [
+                    { kind: 'action', id: 'copy-hex',   label: 'HEX',   hint: hex,      onSelect: () => navigator.clipboard.writeText(hex) },
+                    { kind: 'action', id: 'copy-rgb',   label: 'RGB',   hint: rgbStr,   onSelect: () => navigator.clipboard.writeText(rgbStr) },
+                    { kind: 'action', id: 'copy-hsl',   label: 'HSL',   hint: hslStr,   onSelect: () => navigator.clipboard.writeText(hslStr) },
+                    { kind: 'action', id: 'copy-oklch', label: 'oklch', hint: oklchStr, onSelect: () => navigator.clipboard.writeText(oklchStr) },
+                ],
+            },
+            { kind: 'separator' },
             {
                 kind: 'action',
                 id: 'edit',

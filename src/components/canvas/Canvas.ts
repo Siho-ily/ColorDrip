@@ -91,6 +91,39 @@ export default class Canvas {
     freezeBubble(id: number) { this.bubbleCanvas.freezeBubble(id); }
     unfreezeBubble(id: number) { this.bubbleCanvas.unfreezeBubble(id); }
 
+    /** 버블 복제: 현재 위치 근처에 같은 색/크기의 새 버블을 spring 애니메이션으로 생성 */
+    duplicateBubble(id: number) {
+        const bubble = this.state.bubbles.find(b => b.id === id);
+        if (!bubble) return;
+
+        // getBubbleRects는 현재 DOM 위치(viewport 좌표)를 반환.
+        // Canvas.$el은 inset-0이므로 viewport 좌표 = 캔버스 좌표.
+        const rect = this.bubbleLayer.getBubbleRects().get(id);
+        const cx = rect ? rect.left + rect.width / 2  : bubble.position.x;
+        const cy = rect ? rect.top  + rect.height / 2 : bubble.position.y;
+
+        // 원본에서 지름 + 8px 거리의 랜덤 방향으로 스폰
+        const angle  = Math.random() * Math.PI * 2;
+        const offset = bubble.radius * 2 + 8;
+
+        const copy: Bubble = {
+            id: ++this.nextSpawnId,
+            name: null,
+            color: bubble.color,
+            radius: bubble.radius,
+            position: {
+                x: cx + Math.cos(angle) * offset,
+                y: cy + Math.sin(angle) * offset,
+            },
+            velocity: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
+            state: 'floating',
+        };
+
+        this.bubbleLayer.addBubble(copy, 'spring');
+        this.bubbleCanvas.addBubble(copy);
+        this.onBubbleCatch(copy);
+    }
+
     /** 혼합 결과 버블을 우클릭 위치에 spring 애니메이션과 함께 생성 */
     spawnMixedBubble(color: HslColor, radius: number, position: { x: number; y: number }) {
         const bubble: Bubble = {
