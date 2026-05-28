@@ -45,8 +45,10 @@ export default class BubbleLayer {
         if (animate === 'pop') {
             $inner.style.animation = 'bubble-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
         } else if (animate === 'spring') {
-            // 깜빡임 방지: mount 후 motion 호출 사이의 한 프레임 동안 보이지 않게
+            // 초기 상태를 inline style로 고정해 첫 프레임 깜빡임 방지.
+            // transform도 scale(0)으로 설정해야 motion이 현재 값을 올바르게 읽는다.
             $inner.style.opacity = '0';
+            $inner.style.transform = 'scale(0)';
         }
         $outer.appendChild($inner);
 
@@ -65,12 +67,16 @@ export default class BubbleLayer {
         this.$el.appendChild($outer);
 
         if (animate === 'spring') {
-            // mount 직후 호출. motion이 scale shorthand를 transform 문자열로 매핑한다.
-            motionAnimate(
-                $inner,
-                { scale: [0, 1.15, 1], opacity: [0, 1, 1] },
-                { type: 'spring', stiffness: 400, damping: 17, mass: 0.8 },
-            );
+            // rAF로 한 프레임 뒤에 호출해 브라우저가 초기 상태를 paint한 후 애니메이션 시작.
+            // single target(scale: 1)으로 지정하면 spring 물리가 자연스럽게 overshoot(~1.15)을
+            // 만들어주므로 중간 keyframe을 명시할 필요가 없다.
+            requestAnimationFrame(() => {
+                motionAnimate(
+                    $inner,
+                    { scale: 1, opacity: 1 },
+                    { type: 'spring', stiffness: 400, damping: 17, mass: 0.8 },
+                );
+            });
         }
     }
 
