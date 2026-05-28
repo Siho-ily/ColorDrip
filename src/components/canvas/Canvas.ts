@@ -78,6 +78,9 @@ export default class Canvas {
                 onBubbleCatch(bubble);
             },
             onEmptyPointerDown: (e) => {
+                // 우클릭은 contextmenu 이벤트에서 처리 — marquee를 시작하면
+                // pointerup에서 onEmptyClick이 호출되어 선택이 해제된다.
+                if (e.button === 2) return;
                 this.bubbleCanvas.setMarqueeActive(true);
                 this.selectionLayer.startMarquee(e);
             },
