@@ -220,3 +220,16 @@ body {
     60%  { transform: scale(1.15); opacity: 1; }
     100% { transform: scale(1);    opacity: 1; }
 }
+
+/* 다중 선택된 버블 강조 — outer의 직계 자식(inner)에 ring 효과를 준다.
+   inner가 rounded-full이라 box-shadow가 원형 윤곽을 따라가게 된다. */
+.bubble-selected > div {
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.95),
+        0 0 0 4px rgba(0, 0, 0, 0.55);
+}
+.dark .bubble-selected > div {
+    box-shadow:
+        0 0 0 2px rgba(0, 0, 0, 0.95),
+        0 0 0 4px rgba(255, 255, 255, 0.6);
+}

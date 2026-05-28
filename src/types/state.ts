@@ -4,6 +4,8 @@ import type { Preset } from './palette';
 
 export interface ContextMenuState {
     open: boolean;
+    // 'single': 단일 버블 우클릭 (BubbleContextMenu) / 'multi': 다중 선택 우클릭 (SelectionContextMenu)
+    mode: 'single' | 'multi';
     bubbleId: number | null;
     x: number;
     y: number;

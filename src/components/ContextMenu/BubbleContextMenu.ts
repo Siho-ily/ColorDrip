@@ -34,7 +34,7 @@ export default class BubbleContextMenu {
             onClose: () => {
                 const { bubbleId } = this.getState().contextMenu;
                 if (bubbleId !== null) this.onUnfreeze(bubbleId);
-                this.setState({ contextMenu: { open: false, bubbleId: null, x: 0, y: 0 } });
+                this.setState({ contextMenu: { open: false, mode: 'single', bubbleId: null, x: 0, y: 0 } });
             },
         });
     }
@@ -45,7 +45,7 @@ export default class BubbleContextMenu {
 
         this.onFreeze(id);
         this.menu.show(bubbleRect, this.buildMenuItems(id));
-        this.setState({ contextMenu: { open: true, bubbleId: id, x: bubbleRect.right, y: bubbleRect.top } });
+        this.setState({ contextMenu: { open: true, mode: 'single', bubbleId: id, x: bubbleRect.right, y: bubbleRect.top } });
     }
 
     private buildMenuItems(bubbleId: number): MenuItemDef[] {

@@ -42,6 +42,8 @@ export default class RainCanvas {
     private cleanupInterval: ReturnType<typeof setInterval> | null = null;  // 화면 밖 body 정리
     private state: State;
     private onBubbleCatch: (bubble: Bubble) => void;
+    private onEmptyPointerDown: (e: PointerEvent) => void;
+    private onEmptyContextMenu: (e: MouseEvent) => void;
 
     // body id → RainDrop. 클릭 감지 및 cleanup 시 color/radius 참조에 사용
     private drops = new Map<number, RainDrop>();
@@ -50,13 +52,19 @@ export default class RainCanvas {
         $target,
         initState,
         onBubbleCatch,
+        onEmptyPointerDown,
+        onEmptyContextMenu,
     }: {
         $target: HTMLElement;
         initState: State;
         onBubbleCatch: (bubble: Bubble) => void;
+        onEmptyPointerDown: (e: PointerEvent) => void;
+        onEmptyContextMenu: (e: MouseEvent) => void;
     }) {
         this.state = { ...initState };
         this.onBubbleCatch = onBubbleCatch;
+        this.onEmptyPointerDown = onEmptyPointerDown;
+        this.onEmptyContextMenu = onEmptyContextMenu;
 
         const width = $target.clientWidth;
         const height = $target.clientHeight;
@@ -94,7 +102,10 @@ export default class RainCanvas {
                     const dy = b.position.y - point.y;
                     return dx * dx + dy * dy <= (drop.radius + TOLERANCE) ** 2;
                 });
-            if (!hit) return;
+            if (!hit) {
+                this.onEmptyPointerDown(e);
+                return;
+            }
 
             const drop = this.drops.get(hit.id);
             if (!drop) return;
@@ -115,6 +126,13 @@ export default class RainCanvas {
             // drops 맵에서도 삭제해 cleanupInterval과 afterRender에서 참조되지 않도록 한다
             World.remove(this.engine.world, hit);
             this.drops.delete(hit.id);
+        });
+
+        // 빈 공간(빗방울 포함)에서 우클릭 시 브라우저 기본 메뉴 차단 + 콜백.
+        // 빗방울 우클릭은 별도 정의된 동작이 없으므로 동일하게 처리한다.
+        this.render.canvas.addEventListener('contextmenu', (e: MouseEvent) => {
+            e.preventDefault();
+            this.onEmptyContextMenu(e);
         });
 
         Render.run(this.render);

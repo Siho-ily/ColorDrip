@@ -3,6 +3,7 @@ import type { Bubble, HslColor } from '@/types/bubble';
 import RainCanvas from './rain/RainCanvas';
 import BubbleCanvas from './bubble/BubbleCanvas';
 import BubbleLayer from './bubble/BubbleLayer';
+import SelectionLayer from './SelectionLayer';
 
 /**
  * RainCanvas / BubbleCanvas / BubbleLayer를 조율하는 레이어.
@@ -16,6 +17,7 @@ export default class Canvas {
     private rainCanvas: RainCanvas;
     private bubbleCanvas: BubbleCanvas;
     private bubbleLayer: BubbleLayer;
+    private selectionLayer: SelectionLayer;
     private state: State;
     private onBubbleCatch: (bubble: Bubble) => void;
 
@@ -26,12 +28,20 @@ export default class Canvas {
         $target,
         initState,
         onBubbleCatch,
+        onBubbleClick,
         onBubbleContextMenu,
+        onMarqueeEnd,
+        onEmptyClick,
+        onEmptyContextMenu,
     }: {
         $target: HTMLElement;
         initState: State;
         onBubbleCatch: (bubble: Bubble) => void;
-        onBubbleContextMenu: (id: number, bubbleRect: DOMRect) => void;
+        onBubbleClick: (id: number, additive: boolean) => void;
+        onBubbleContextMenu: (id: number, bubbleRect: DOMRect, point: { x: number; y: number }) => void;
+        onMarqueeEnd: (ids: number[], additive: boolean) => void;
+        onEmptyClick: () => void;
+        onEmptyContextMenu: (point: { x: number; y: number }) => void;
     }) {
         this.$el = document.createElement('div');
         this.$el.className = 'absolute inset-0 z-10 select-none';
@@ -40,11 +50,17 @@ export default class Canvas {
         this.state = { ...initState };
         this.onBubbleCatch = onBubbleCatch;
 
-        this.bubbleLayer = new BubbleLayer({ $target: this.$el, onBubbleContextMenu });
+        this.bubbleLayer = new BubbleLayer({ $target: this.$el, onBubbleClick, onBubbleContextMenu });
 
         this.bubbleCanvas = new BubbleCanvas({
             $target: this.$el,
             onPositionUpdate: (updates) => this.bubbleLayer.syncPositions(updates),
+        });
+
+        this.selectionLayer = new SelectionLayer({
+            getBubbleRects: () => this.bubbleLayer.getBubbleRects(),
+            onMarqueeEnd,
+            onEmptyClick,
         });
 
         this.rainCanvas = new RainCanvas({
@@ -55,11 +71,32 @@ export default class Canvas {
                 this.bubbleCanvas.addBubble(bubble);
                 onBubbleCatch(bubble);
             },
+            onEmptyPointerDown: (e) => this.selectionLayer.startMarquee(e),
+            onEmptyContextMenu: (e) => onEmptyContextMenu({ x: e.clientX, y: e.clientY }),
         });
     }
 
     freezeBubble(id: number) { this.bubbleCanvas.freezeBubble(id); }
     unfreezeBubble(id: number) { this.bubbleCanvas.unfreezeBubble(id); }
+
+    /** 혼합 결과 버블을 우클릭 위치에 spring 애니메이션과 함께 생성 */
+    spawnMixedBubble(color: HslColor, radius: number, position: { x: number; y: number }) {
+        const bubble: Bubble = {
+            id: ++this.nextSpawnId,
+            name: null,
+            color,
+            radius,
+            position,
+            velocity: {
+                x: (Math.random() - 0.5) * 2,
+                y: (Math.random() - 0.5) * 2,
+            },
+            state: 'floating',
+        };
+        this.bubbleLayer.addBubble(bubble, 'spring');
+        this.bubbleCanvas.addBubble(bubble);
+        this.onBubbleCatch(bubble);
+    }
 
     /** 팔레트 슬롯 클릭 시 캔버스 빈 곳에 floating bubble을 popping 애니메이션과 함께 생성 */
     spawnBubble(color: HslColor) {
@@ -102,5 +139,9 @@ export default class Canvas {
                 this.bubbleLayer.removeBubble(b.id);
             }
         });
+
+        if (prev.selectedBubbleIds !== this.state.selectedBubbleIds) {
+            this.bubbleLayer.syncSelection(new Set(this.state.selectedBubbleIds));
+        }
     }
 }

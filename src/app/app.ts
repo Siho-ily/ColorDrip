@@ -4,14 +4,21 @@ import type { Preset } from '@/types/palette';
 import type { Settings } from '@/types/settings';
 import initialState from '@/data/state';
 import BubbleContextMenu from '../components/ContextMenu/BubbleContextMenu';
+import SelectionContextMenu from '../components/ContextMenu/SelectionContextMenu';
 import { loadPaletteStore, savePaletteStore, createPreset } from '@/lib/paletteStorage';
-import { createPresetColor } from '@/lib/color';
+import { createPresetColor, mixColors } from '@/lib/color';
+
+/** 우클릭 좌표를 ContextMenu의 anchor DOMRect로 변환 (1x1 박스) */
+function pointRect(p: { x: number; y: number }): DOMRect {
+    return new DOMRect(p.x, p.y, 1, 1);
+}
 
 export default class App {
     private state: State;
     private backgroundLayer: BackgroundLayer;
     private canvas: Canvas;
     private bubbleContextMenu: BubbleContextMenu;
+    private selectionContextMenu: SelectionContextMenu;
     private palette: Palette;
     private menuBar: MenuBar;
     private settingsPanel: SettingsPanel;
@@ -43,15 +50,25 @@ export default class App {
             onSaveToPreset: (bubbleId) => this.saveToActivePreset(bubbleId),
         });
 
+        this.selectionContextMenu = new SelectionContextMenu({
+            getState: () => this.state,
+            setState: (next) => this.setState(next),
+            onMix:    (point) => this.mixSelected(point),
+            onDelete: () => this.deleteSelected(),
+            onSaveToPreset: () => this.saveSelectedToActivePreset(),
+        });
+
         this.canvas = new Canvas({
             $target: $app,
             initState: this.state,
             onBubbleCatch: (bubble) => {
                 this.setState({ bubbles: [...this.state.bubbles, bubble] });
             },
-            onBubbleContextMenu: (id, bubbleRect) => {
-                this.bubbleContextMenu.open(id, bubbleRect);
-            },
+            onBubbleClick: (id, additive) => this.toggleBubbleSelection(id, additive),
+            onBubbleContextMenu: (id, bubbleRect, point) => this.openBubbleContextMenu(id, bubbleRect, point),
+            onMarqueeEnd: (ids, additive) => this.applyMarqueeSelection(ids, additive),
+            onEmptyClick: () => this.setState({ selectedBubbleIds: [] }),
+            onEmptyContextMenu: (point) => this.openEmptyContextMenu(point),
         });
 
         this.palette = new Palette({
@@ -99,6 +116,15 @@ export default class App {
             }),
             onSettingsToggle: (anchorRect) => this.settingsPanel.toggle(anchorRect),
             getOccupiedRightWidth: () => this.palette.getOccupiedWidth(),
+        });
+
+        // Escape로 선택 해제. ContextMenu가 열려 있으면 ContextMenu 자체 Escape에 양보.
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (this.state.contextMenu.open) return;
+            if (this.state.selectedBubbleIds.length > 0) {
+                this.setState({ selectedBubbleIds: [] });
+            }
         });
 
         this.setState(this.state);
@@ -250,6 +276,81 @@ export default class App {
                 return { ...p, colors: [...p.colors, moved] };
             });
         this.setState({ palette: { ...this.state.palette, presets } });
+    }
+
+    private applyMarqueeSelection(ids: number[], additive: boolean) {
+        if (additive) {
+            const merged = Array.from(new Set([...this.state.selectedBubbleIds, ...ids]));
+            this.setState({ selectedBubbleIds: merged });
+        } else {
+            this.setState({ selectedBubbleIds: ids });
+        }
+    }
+
+    private toggleBubbleSelection(id: number, additive: boolean) {
+        if (additive) {
+            const prev = this.state.selectedBubbleIds;
+            const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+            this.setState({ selectedBubbleIds: next });
+        } else {
+            this.setState({ selectedBubbleIds: [id] });
+        }
+    }
+
+    private openBubbleContextMenu(id: number, bubbleRect: DOMRect, point: { x: number; y: number }) {
+        // 선택된 버블이 있으면 어디서 우클릭하든 SelectionContextMenu (anchor는 우클릭 지점)
+        if (this.state.selectedBubbleIds.length > 0) {
+            this.selectionContextMenu.open(pointRect(point), point);
+        } else {
+            this.bubbleContextMenu.open(id, bubbleRect);
+        }
+    }
+
+    private openEmptyContextMenu(point: { x: number; y: number }) {
+        if (this.state.selectedBubbleIds.length === 0) return;
+        this.selectionContextMenu.open(pointRect(point), point);
+    }
+
+    private mixSelected(point: { x: number; y: number }) {
+        const idSet = new Set(this.state.selectedBubbleIds);
+        const selected = this.state.bubbles.filter(b => idSet.has(b.id));
+        if (selected.length < 2) return;
+
+        const entries = selected.map(b => ({ color: b.color }));
+        const mixed = mixColors(entries, this.state.settings.colorSpace);
+        const avgRadius = selected.reduce((acc, b) => acc + b.radius, 0) / selected.length;
+
+        this.canvas.spawnMixedBubble(mixed, avgRadius, point);
+        this.setState({ selectedBubbleIds: [] });
+    }
+
+    private deleteSelected() {
+        const selected = new Set(this.state.selectedBubbleIds);
+        if (selected.size === 0) return;
+        this.setState({
+            bubbles: this.state.bubbles.filter(b => !selected.has(b.id)),
+            selectedBubbleIds: [],
+        });
+    }
+
+    private saveSelectedToActivePreset() {
+        const { activePresetId, presets } = this.state.palette;
+        if (!activePresetId) return;
+        const idSet = new Set(this.state.selectedBubbleIds);
+        if (idSet.size === 0) return;
+
+        const newColors = this.state.bubbles
+            .filter(b => idSet.has(b.id))
+            .map(b => createPresetColor(b.color));
+
+        this.setState({
+            palette: {
+                ...this.state.palette,
+                presets: presets.map(p =>
+                    p.id === activePresetId ? { ...p, colors: [...p.colors, ...newColors] } : p
+                ),
+            },
+        });
     }
 
     private addColorToActivePreset(color: import('@/types/bubble').HslColor) {

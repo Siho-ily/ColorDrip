@@ -1,3 +1,4 @@
+import { animate as motionAnimate } from 'motion';
 import type { Bubble } from '@/types/bubble';
 
 /**
@@ -10,22 +11,26 @@ import type { Bubble } from '@/types/bubble';
 export default class BubbleLayer {
     private $el: HTMLDivElement;
     private bubbleMap = new Map<number, { $el: HTMLDivElement; radius: number }>();
-    private readonly onBubbleContextMenu: (id: number, bubbleRect: DOMRect) => void;
+    private readonly onBubbleClick: (id: number, additive: boolean) => void;
+    private readonly onBubbleContextMenu: (id: number, bubbleRect: DOMRect, point: { x: number; y: number }) => void;
 
     constructor({
         $target,
+        onBubbleClick,
         onBubbleContextMenu,
     }: {
         $target: HTMLElement;
-        onBubbleContextMenu: (id: number, bubbleRect: DOMRect) => void;
+        onBubbleClick: (id: number, additive: boolean) => void;
+        onBubbleContextMenu: (id: number, bubbleRect: DOMRect, point: { x: number; y: number }) => void;
     }) {
+        this.onBubbleClick = onBubbleClick;
         this.onBubbleContextMenu = onBubbleContextMenu;
         this.$el = document.createElement('div');
         this.$el.className = 'absolute inset-0 pointer-events-none';
         $target.appendChild(this.$el);
     }
 
-    addBubble(bubble: Bubble, animate?: 'pop') {
+    addBubble(bubble: Bubble, animate?: 'pop' | 'spring') {
         // outer: 위치(translate) 담당. syncPositions가 매 프레임 갱신.
         // inner: 색상/모양/스케일 애니메이션 담당. transform 충돌 방지를 위해 분리.
         const $outer = document.createElement('div');
@@ -39,16 +44,34 @@ export default class BubbleLayer {
         $inner.style.backgroundColor = `hsl(${bubble.color.h}, ${bubble.color.s}%, ${bubble.color.l}%)`;
         if (animate === 'pop') {
             $inner.style.animation = 'bubble-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        } else if (animate === 'spring') {
+            // 깜빡임 방지: mount 후 motion 호출 사이의 한 프레임 동안 보이지 않게
+            $inner.style.opacity = '0';
         }
         $outer.appendChild($inner);
 
+        // 드래그가 끝난 mouseup은 click을 발생시키지 않는다 (브라우저 기본).
+        // 짧은 클릭만 선택으로 처리된다.
+        $outer.addEventListener('click', (e) => {
+            this.onBubbleClick(bubble.id, e.shiftKey);
+        });
+
         $outer.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            this.onBubbleContextMenu(bubble.id, $outer.getBoundingClientRect());
+            this.onBubbleContextMenu(bubble.id, $outer.getBoundingClientRect(), { x: e.clientX, y: e.clientY });
         });
 
         this.bubbleMap.set(bubble.id, { $el: $outer, radius: bubble.radius });
         this.$el.appendChild($outer);
+
+        if (animate === 'spring') {
+            // mount 직후 호출. motion이 scale shorthand를 transform 문자열로 매핑한다.
+            motionAnimate(
+                $inner,
+                { scale: [0, 1.15, 1], opacity: [0, 1, 1] },
+                { type: 'spring', stiffness: 400, damping: 17, mass: 0.8 },
+            );
+        }
     }
 
     removeBubble(id: number) {
@@ -64,5 +87,20 @@ export default class BubbleLayer {
             if (!entry) return;
             entry.$el.style.transform = `translate(${x - entry.radius}px, ${y - entry.radius}px)`;
         });
+    }
+
+    syncSelection(ids: Set<number>) {
+        this.bubbleMap.forEach((entry, id) => {
+            entry.$el.classList.toggle('bubble-selected', ids.has(id));
+        });
+    }
+
+    /** marquee 교차 판정용 — id → viewport 기준 DOMRect */
+    getBubbleRects(): Map<number, DOMRect> {
+        const result = new Map<number, DOMRect>();
+        this.bubbleMap.forEach((entry, id) => {
+            result.set(id, entry.$el.getBoundingClientRect());
+        });
+        return result;
     }
 }
