@@ -87,6 +87,14 @@ export default class BubbleLayer {
         this.bubbleMap.delete(id);
     }
 
+    resizeBubble(id: number, newRadius: number) {
+        const entry = this.bubbleMap.get(id);
+        if (!entry) return;
+        entry.$el.style.width = `${newRadius * 2}px`;
+        entry.$el.style.height = `${newRadius * 2}px`;
+        entry.radius = newRadius;
+    }
+
     syncPositions(updates: { id: number; x: number; y: number }[]) {
         updates.forEach(({ id, x, y }) => {
             const entry = this.bubbleMap.get(id);

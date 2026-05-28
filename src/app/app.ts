@@ -7,6 +7,7 @@ import BubbleContextMenu from '../components/ContextMenu/BubbleContextMenu';
 import SelectionContextMenu from '../components/ContextMenu/SelectionContextMenu';
 import { loadPaletteStore, savePaletteStore, createPreset } from '@/lib/paletteStorage';
 import { createPresetColor, mixColors } from '@/lib/color';
+import { radiusFromSize } from '@/data/constants';
 
 /** 우클릭 좌표를 ContextMenu의 anchor DOMRect로 변환 (1x1 박스) */
 function pointRect(p: { x: number; y: number }): DOMRect {
@@ -133,7 +134,17 @@ export default class App {
 
     setState(nextState: Partial<State>) {
         const prevPalette = this.state.palette;
+        const prevSize = this.state.settings.rain.size;
         this.state = { ...this.state, ...nextState };
+
+        // size 변경 시 state.bubbles 반지름 동기화 (duplicateBubble 등이 올바른 반지름을 참조하도록)
+        if (this.state.settings.rain.size !== prevSize) {
+            const newRadius = radiusFromSize(this.state.settings.rain.size);
+            this.state = {
+                ...this.state,
+                bubbles: this.state.bubbles.map(b => ({ ...b, radius: newRadius })),
+            };
+        }
         document.body.classList.toggle('dark', this.state.settings.darkMode);
         this.backgroundLayer.setState(this.state);
         this.canvas.setState(this.state);

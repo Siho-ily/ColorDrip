@@ -4,6 +4,7 @@ import RainCanvas from './rain/RainCanvas';
 import BubbleCanvas from './bubble/BubbleCanvas';
 import BubbleLayer from './bubble/BubbleLayer';
 import SelectionLayer from './SelectionLayer';
+import { radiusFromSize } from '@/data/constants';
 
 /**
  * RainCanvas / BubbleCanvas / BubbleLayer를 조율하는 레이어.
@@ -73,7 +74,7 @@ export default class Canvas {
             $target: this.$el,
             initState: this.state,
             onBubbleCatch: (bubble) => {
-                this.bubbleLayer.addBubble(bubble);
+                this.bubbleLayer.addBubble(bubble, 'spring');
                 this.bubbleCanvas.addBubble(bubble);
                 onBubbleCatch(bubble);
             },
@@ -148,7 +149,7 @@ export default class Canvas {
         const width = this.$el.clientWidth;
         const height = this.$el.clientHeight;
 
-        const radius = 30;
+        const radius = radiusFromSize(this.state.settings.rain.size);
         const margin = radius + 20;
         const x = margin + Math.random() * Math.max(0, width - margin * 2);
         const y = margin + Math.random() * Math.max(0, height - margin * 2);
@@ -175,6 +176,15 @@ export default class Canvas {
         const prev = this.state;
         this.state = { ...this.state, ...nextState };
         this.rainCanvas.setState(this.state);
+
+        // size 변경 시 기존 버블 물리 body + DOM 크기 동기화
+        if (prev.settings.rain.size !== this.state.settings.rain.size) {
+            const newRadius = radiusFromSize(this.state.settings.rain.size);
+            this.state.bubbles.forEach(b => {
+                this.bubbleCanvas.resizeBubble(b.id, newRadius);
+                this.bubbleLayer.resizeBubble(b.id, newRadius);
+            });
+        }
 
         // state에서 제거된 bubble → 물리 + DOM 양쪽에서 제거
         const nextIds = new Set(this.state.bubbles.map(b => b.id));

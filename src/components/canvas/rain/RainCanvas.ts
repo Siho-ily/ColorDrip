@@ -1,13 +1,11 @@
 import Matter from 'matter-js';
 import type { State } from '@/types/state';
 import type { Bubble, HslColor } from '@/types/bubble';
-import RainDrop from './RainDrop';
+import RainDrop, { drawTeardrop } from './RainDrop';
 import {
     GRAVITY,
     TOLERANCE,
-    RADIUS_BASE,
-    RADIUS_FACTOR,
-    RADIUS_JITTER,
+    radiusFromSize,
     DENSITY_INTERVAL_BASE,
     DROP_SATURATION,
     DROP_LIGHTNESS,
@@ -48,6 +46,10 @@ export default class RainCanvas {
     // body id → RainDrop. 클릭 감지 및 cleanup 시 color/radius 참조에 사용
     private drops = new Map<number, RainDrop>();
 
+    // catch된 물방울의 퇴장 애니메이션 목록. 물리 body 제거 후에도 시각적으로 fade+shrink
+    private exitingDrops: { x: number; y: number; radius: number; color: HslColor; startTime: number }[] = [];
+    private static readonly EXIT_DURATION = 280; // ms
+
     constructor({
         $target,
         initState,
@@ -80,10 +82,24 @@ export default class RainCanvas {
 
         // 경계 없음 — 화면 밖으로 나가면 cleanupInterval에서 제거
 
-        // Matter.js가 프레임을 그린 뒤 각 RainDrop을 삼각형으로 덮어씀
+        // Matter.js가 프레임을 그린 뒤 각 RainDrop을 덮어씀.
+        // 퇴장 중인 물방울(exitingDrops)도 여기서 fade+shrink 처리한다.
         Events.on(this.render, 'afterRender', () => {
             const ctx = this.render.context;
+            const now = performance.now();
+
             this.drops.forEach(drop => drop.draw(ctx));
+
+            // 잡힌 물방울: 크기를 줄이면서 fade-out
+            this.exitingDrops = this.exitingDrops.filter(e => {
+                const t = (now - e.startTime) / RainCanvas.EXIT_DURATION;
+                if (t >= 1) return false;
+                ctx.save();
+                ctx.globalAlpha = 1 - t;                // 선형 페이드
+                drawTeardrop(ctx, e.x, e.y, e.radius * (1 - t), e.color);  // 선형 축소
+                ctx.restore();
+                return true;
+            });
         });
 
         // pointerdown을 써야 click(mouseup 기준)보다 100–200ms 빠르게 감지된다.
@@ -121,6 +137,15 @@ export default class RainCanvas {
             };
 
             this.onBubbleCatch(bubble);
+
+            // 퇴장 애니메이션: 현재 위치/크기/색상을 캡처해 exitingDrops에 등록
+            this.exitingDrops.push({
+                x: hit.position.x,
+                y: hit.position.y,
+                radius: drop.radius,
+                color: drop.color,
+                startTime: performance.now(),
+            });
 
             // body를 world에서 제거해 물리 루프에서 완전히 분리하고,
             // drops 맵에서도 삭제해 cleanupInterval과 afterRender에서 참조되지 않도록 한다
@@ -184,9 +209,7 @@ export default class RainCanvas {
         this.rainInterval = setInterval(() => {
             // resize 대응: 매 틱마다 현재 캔버스 너비를 읽음
             const width = this.render.canvas.width;
-            // size(1–20) → 반지름 범위. size 10 기준 12–16px, size 1은 최소 4px 보장
-            const base = RADIUS_BASE + this.state.settings.rain.size * RADIUS_FACTOR;
-            const radius = base + Math.random() * (base * RADIUS_JITTER);
+            const radius = radiusFromSize(this.state.settings.rain.size);
             // 사선으로 떨어지므로 왼쪽 바깥에서도 시작할 수 있게 범위 확장
             const x = -radius + Math.random() * (width + radius * 2);
 

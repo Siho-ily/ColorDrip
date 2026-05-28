@@ -7,12 +7,15 @@ export const GRAVITY = { x: 0, y: 1, scale: 0.0005 };
 export const TOLERANCE = 15;
 
 /**
- * 방울 반지름 계산식: base = RADIUS_BASE + size × RADIUS_FACTOR
- * 실제 radius = base + random() × base × RADIUS_JITTER
+ * 크기 설정값(1–20) → 반지름(px) 변환.
+ * size=1: 10px, size=10: 28px, size=20: 48px
+ * 빗방울과 팔레트 버블 모두 이 함수로 반지름을 결정해 크기를 동기화한다.
  */
-export const RADIUS_BASE = 2;
-export const RADIUS_FACTOR = 1.4;
-export const RADIUS_JITTER = 0.3;
+export const RADIUS_BASE = 8;
+export const RADIUS_FACTOR = 2;
+export function radiusFromSize(size: number): number {
+    return RADIUS_BASE + size * RADIUS_FACTOR;
+}
 
 /** density(1–20) → 생성 간격(ms). interval = DENSITY_INTERVAL_BASE / density */
 export const DENSITY_INTERVAL_BASE = 2000;

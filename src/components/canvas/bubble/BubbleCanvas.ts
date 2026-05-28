@@ -130,6 +130,27 @@ export default class BubbleCanvas {
         this.bodyMap.delete(id);
     }
 
+    resizeBubble(id: number, newRadius: number) {
+        const body = this.bodyMap.get(id);
+        if (!body) return;
+        const pos = { ...body.position };
+        const vel = { ...body.velocity };
+        const isStatic = body.isStatic;
+        World.remove(this.engine.world, body);
+        const newBody = Bodies.circle(pos.x, pos.y, newRadius, {
+            restitution: BUBBLE_RESTITUTION,
+            friction: 0,
+            frictionAir: BUBBLE_FRICTION_AIR,
+        });
+        if (isStatic) {
+            Body.setStatic(newBody, true);
+        } else {
+            Body.setVelocity(newBody, vel);
+        }
+        this.bodyMap.set(id, newBody);
+        World.add(this.engine.world, newBody);
+    }
+
     /** marquee 드래그 중 MouseConstraint가 버블을 의도치 않게 잡는 현상 방지 */
     setMarqueeActive(active: boolean) {
         this.isMarqueeActive = active;
