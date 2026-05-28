@@ -59,8 +59,14 @@ export default class Canvas {
 
         this.selectionLayer = new SelectionLayer({
             getBubbleRects: () => this.bubbleLayer.getBubbleRects(),
-            onMarqueeEnd,
-            onEmptyClick,
+            onMarqueeEnd: (ids, additive) => {
+                this.bubbleCanvas.setMarqueeActive(false);
+                onMarqueeEnd(ids, additive);
+            },
+            onEmptyClick: () => {
+                this.bubbleCanvas.setMarqueeActive(false);
+                onEmptyClick();
+            },
         });
 
         this.rainCanvas = new RainCanvas({
@@ -71,7 +77,10 @@ export default class Canvas {
                 this.bubbleCanvas.addBubble(bubble);
                 onBubbleCatch(bubble);
             },
-            onEmptyPointerDown: (e) => this.selectionLayer.startMarquee(e),
+            onEmptyPointerDown: (e) => {
+                this.bubbleCanvas.setMarqueeActive(true);
+                this.selectionLayer.startMarquee(e);
+            },
             onEmptyContextMenu: (e) => onEmptyContextMenu({ x: e.clientX, y: e.clientY }),
         });
     }

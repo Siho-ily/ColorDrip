@@ -23,6 +23,8 @@ export default class BubbleCanvas {
     private bodyMap = new Map<number, Matter.Body>();  // bubble.id → Matter.Body
     private width: number;
     private height: number;
+    private mouse!: Matter.Mouse;
+    private isMarqueeActive = false;
 
     constructor({
         $target,
@@ -71,13 +73,25 @@ export default class BubbleCanvas {
 
         // document 기준으로 마우스 이벤트를 수신해야 팔레트 등 상위 z-index 요소 위에서도
         // 드래그가 끊기지 않는다. Canvas.$el이 inset-0이므로 좌표 오프셋은 동일.
-        const mouse = Mouse.create(document.documentElement);
+        this.mouse = Mouse.create(document.documentElement);
         // Matter.js가 'wheel' 이벤트에 passive:false + preventDefault()를 걸어 페이지 스크롤을 막는다.
         // 드래그 물리에 wheel은 불필요하므로 제거한다. (matter.js build/matter.js:5896 참고)
-        const _m = mouse as unknown as Record<string, EventListener>;
+        const _m = this.mouse as unknown as Record<string, EventListener>;
         document.documentElement.removeEventListener('wheel', _m['mousewheel']);
+
+        // MouseConstraint.update는 engine.beforeUpdate마다 실행되며,
+        // mouse.button === 0(눌림) + 미掴み 상태이면 마우스 위치의 body를 탐색해 잡는다.
+        // marquee 드래그 중 버블이 의도치 않게 잡히는 버그를 막기 위해:
+        // MouseConstraint.create가 자신의 beforeUpdate 리스너를 등록하기 전에
+        // 우리 핸들러를 먼저 등록해 두면 매 틱마다 mouse.button을 -1로 덮어쓸 수 있다.
+        Events.on(this.engine, 'beforeUpdate', () => {
+            if (this.isMarqueeActive) {
+                this.mouse.button = -1;
+            }
+        });
+
         const mouseConstraint = MouseConstraint.create(this.engine, {
-            mouse,
+            mouse: this.mouse,
             constraint: { stiffness: 0.2, render: { visible: false } },
         });
         World.add(this.engine.world, mouseConstraint);
@@ -114,6 +128,11 @@ export default class BubbleCanvas {
         if (!body) return;
         World.remove(this.engine.world, body);
         this.bodyMap.delete(id);
+    }
+
+    /** marquee 드래그 중 MouseConstraint가 버블을 의도치 않게 잡는 현상 방지 */
+    setMarqueeActive(active: boolean) {
+        this.isMarqueeActive = active;
     }
 
     freezeBubble(id: number) {
