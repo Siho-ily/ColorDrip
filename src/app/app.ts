@@ -329,7 +329,7 @@ export default class App {
         if (selected.length < 2) return;
 
         const entries = selected.map(b => ({ color: b.color }));
-        const mixed = mixColors(entries, this.state.settings.colorSpace);
+        const mixed = mixColors(entries, this.state.settings.colorMixing);
         const avgRadius = selected.reduce((acc, b) => acc + b.radius, 0) / selected.length;
 
         this.canvas.spawnMixedBubble(mixed, avgRadius, point);

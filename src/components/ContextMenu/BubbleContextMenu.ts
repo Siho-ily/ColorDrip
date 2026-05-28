@@ -1,7 +1,7 @@
-import chroma from 'chroma-js';
 import { ContextMenu } from '@/components/index';
 import type { MenuItemDef } from '@/types/menu';
 import type { State } from '@/types/state';
+import { formatColor } from '@/lib/color';
 
 export default class BubbleContextMenu {
     private menu: ContextMenu;
@@ -56,17 +56,10 @@ export default class BubbleContextMenu {
         const bubble = this.getState().bubbles.find(b => b.id === bubbleId);
         if (!bubble) return [];
 
-        const { h, s, l } = bubble.color;
-        const color = chroma.hsl(h, s / 100, l / 100);
-
-        const hex = color.hex();
-        const [r, g, b] = color.rgb().map(Math.round);
-        const [hh, ss, ll] = color.hsl();
-        const [ol, oc, oh] = color.oklch();
-
-        const rgbStr   = `rgb(${r}, ${g}, ${b})`;
-        const hslStr   = `hsl(${Math.round(hh)} ${Math.round(ss * 100)}% ${Math.round(ll * 100)}%)`;
-        const oklchStr = `oklch(${(ol * 100).toFixed(1)}% ${oc.toFixed(3)} ${(oh ?? 0).toFixed(1)})`;
+        const hex      = formatColor(bubble.color, 'hex');
+        const rgbStr   = formatColor(bubble.color, 'rgb');
+        const hslStr   = formatColor(bubble.color, 'hsl');
+        const oklchStr = formatColor(bubble.color, 'oklch');
 
         return [
             {

@@ -1,8 +1,8 @@
-import chroma from 'chroma-js';
 import ContextMenu from '@/components/ContextMenu/ContextMenu';
 import type { MenuItemDef } from '@/types/menu';
 import type { HslColor } from '@/types/bubble';
 import type { Preset } from '@/types/palette';
+import { formatColor } from '@/lib/color';
 
 export default class ColorSlotContextMenu {
     private menu: ContextMenu;
@@ -49,15 +49,10 @@ export default class ColorSlotContextMenu {
     private buildItems(presetId: string, colorId: string, color: HslColor): MenuItemDef[] {
         const otherPresets = this.getPresets().filter(p => p.id !== presetId);
 
-        const { h, s, l } = color;
-        const c = chroma.hsl(h, s / 100, l / 100);
-        const hex    = c.hex();
-        const [r, g, b] = c.rgb().map(Math.round);
-        const [hh, ss, ll] = c.hsl();
-        const [ol, oc, oh] = c.oklch();
-        const rgbStr   = `rgb(${r}, ${g}, ${b})`;
-        const hslStr   = `hsl(${Math.round(hh)} ${Math.round(ss * 100)}% ${Math.round(ll * 100)}%)`;
-        const oklchStr = `oklch(${(ol * 100).toFixed(1)}% ${oc.toFixed(3)} ${(oh ?? 0).toFixed(1)})`;
+        const hex      = formatColor(color, 'hex');
+        const rgbStr   = formatColor(color, 'rgb');
+        const hslStr   = formatColor(color, 'hsl');
+        const oklchStr = formatColor(color, 'oklch');
 
         const items: MenuItemDef[] = [
             {

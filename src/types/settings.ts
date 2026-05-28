@@ -11,7 +11,7 @@ export interface BubbleSettings {
 
 /**
  * chroma-js의 mix() 함수가 지원하는 색 공간 목록.
- * 각 값은 chroma.mix(c1, c2, ratio, colorSpace)의 세 번째 인자로 그대로 전달된다.
+ * 각 값은 chroma.average(colors, colorSpace, weights)의 두 번째 인자로 그대로 전달된다.
  *
  * - rgb    : 가장 단순. 중간값이 탁해 보일 수 있음
  * - hsl    : 색상환 기반. 보색끼리 섞으면 회색 구간을 지남
@@ -25,10 +25,13 @@ export interface BubbleSettings {
  */
 export type ColorSpace = 'rgb' | 'hsl' | 'hsv' | 'hsi' | 'lab' | 'lch' | 'oklch' | 'oklab' | 'lrgb';
 
+/** 색상 표기 방식. UI 전반에서 색을 어떻게 표시·입력할지 결정한다. */
+export type ColorNotation = 'hex' | 'rgb' | 'hsl' | 'oklch';
+
 export interface Settings {
-    colorSpace: ColorSpace;     // 색상 혼합에 사용할 색 공간
-    showHexAlways: boolean;     // 버블에 hex 코드를 항상 표시할지 여부
-    darkMode: boolean;          // 다크 모드
-    rain: RainSettings;         // 비 관련 세부 설정
-    bubble: BubbleSettings;     // 버블 관련 세부 설정
+    colorMixing: ColorSpace;        // 색상 혼합에 사용할 색 공간 (mixColors)
+    colorNotation: ColorNotation;   // hover 툴팁 및 컬러피커 입력 모드의 표기 형식
+    darkMode: boolean;              // 다크 모드
+    rain: RainSettings;             // 비 관련 세부 설정
+    bubble: BubbleSettings;         // 버블 관련 세부 설정
 }

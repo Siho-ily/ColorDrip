@@ -15,8 +15,8 @@ const initialState: State = {
     selectedBubbleIds: [],
     contextMenu: { open: false, mode: 'single', bubbleId: null, x: 0, y: 0 },
     settings: {
-        colorSpace: 'hsl',
-        showHexAlways: false,
+        colorMixing: 'hsl',
+        colorNotation: 'hex',
         darkMode: false,
         rain: { speed: 10, density: 10, size: 5, wind: 2.5 },
         bubble: { size: 5 },
