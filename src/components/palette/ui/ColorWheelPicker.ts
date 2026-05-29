@@ -44,7 +44,7 @@ export default class ColorWheelPicker {
 
         this.$el = document.createElement('div');
         this.$el.className = [
-            'fixed inset-0 z-50 flex items-center justify-center hidden',
+            'fixed inset-0 z-[55] flex items-center justify-center hidden',
             'bg-black/40 backdrop-blur-sm',
         ].join(' ');
         $target.appendChild(this.$el);

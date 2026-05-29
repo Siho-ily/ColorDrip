@@ -1,4 +1,4 @@
-import { BackgroundLayer, Canvas, Palette, MenuBar, SettingsPanel } from '@/components/index';
+import { BackgroundLayer, Canvas, Palette, MenuBar, SettingsPanel, ShortcutHelp } from '@/components/index';
 import CanvasAddButton from '@/components/canvas/CanvasAddButton';
 import type { State } from '@/types/state';
 import type { Preset, PresetColor } from '@/types/palette';
@@ -24,6 +24,7 @@ export default class App {
     private palette: Palette;
     private menuBar: MenuBar;
     private settingsPanel: SettingsPanel;
+    private shortcutHelp: ShortcutHelp;
     private canvasAddButton: CanvasAddButton;
 
     constructor({ $app }: { $app: HTMLElement }) {
@@ -129,6 +130,8 @@ export default class App {
             onOpenChange: (open) => this.menuBar?.setSettingsActive(open),
         });
 
+        this.shortcutHelp = new ShortcutHelp({ $target: $app });
+
         this.menuBar = new MenuBar({
             $target: $app,
             onRainToggle: () => this.setState({ rainMode: !this.state.rainMode }),
@@ -139,6 +142,7 @@ export default class App {
                 settings: { ...this.state.settings, darkMode: !this.state.settings.darkMode },
             }),
             onSettingsToggle: (anchorRect) => this.settingsPanel.toggle(anchorRect),
+            onHelpToggle: () => this.shortcutHelp.toggle(),
             getOccupiedRightWidth: () => this.palette.getOccupiedWidth(),
         });
 
@@ -147,19 +151,93 @@ export default class App {
             onClick: () => this.palette.openColorPicker((color) => this.canvas.spawnBubble(color)),
         });
 
-        // Escape로 선택 해제. ContextMenu가 열려 있으면 ContextMenu 자체 Escape에 양보.
-        document.addEventListener('keydown', (e) => {
-            if (e.key !== 'Escape') return;
-            if (this.state.contextMenu.open) return;
-            if (this.state.selectedBubbleIds.length > 0) {
-                this.setState({ selectedBubbleIds: [] });
-            }
-            if (this.state.selectedColorIds.length > 0) {
-                this.setState({ selectedColorIds: [] });
-            }
-        });
+        this.bindShortcuts();
 
         this.setState(this.state);
+    }
+
+    /** 전역 키보드 단축키. 모든 액션은 기존 메서드/콜백으로 위임한다. */
+    private bindShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // 입력 필드(프리셋 이름 편집 등) 포커스 중에는 네이티브 동작에 양보한다.
+            const target = e.target as HTMLElement | null;
+            if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) {
+                return;
+            }
+
+            const mod = e.metaKey || e.ctrlKey;
+
+            // Escape: 도움말 닫기 → 선택 해제. ContextMenu가 열려 있으면 메뉴 자체 Escape에 양보.
+            if (e.key === 'Escape') {
+                if (this.shortcutHelp.isOpen()) { this.shortcutHelp.close(); return; }
+                if (this.state.contextMenu.open) return;
+                if (this.state.selectedBubbleIds.length > 0) this.setState({ selectedBubbleIds: [] });
+                if (this.state.selectedColorIds.length > 0) this.setState({ selectedColorIds: [] });
+                return;
+            }
+
+            // 도움말 토글은 오버레이/메뉴 위에서도 동작하도록 가드보다 먼저 처리.
+            if (e.key === '?') { e.preventDefault(); this.shortcutHelp.toggle(); return; }
+
+            // 컨텍스트 메뉴/도움말이 열려 있으면 액션 단축키는 무시한다.
+            if (this.state.contextMenu.open || this.shortcutHelp.isOpen()) return;
+
+            // ── 수식어(Cmd/Ctrl) 조합 ──
+            if (mod) {
+                switch (e.key.toLowerCase()) {
+                    case 'a': e.preventDefault(); this.selectAllBubbles(); return;
+                    case 'd': e.preventDefault(); this.duplicateSelected(); return;
+                    case 's': e.preventDefault(); this.saveSelectedToActivePreset(); return;
+                    case ',': e.preventDefault(); this.menuBar.toggleSettings(); return;
+                }
+                return; // 그 외 수식어 조합은 브라우저에 양보
+            }
+
+            // ── 단일 키 ──
+            switch (e.key) {
+                // 전역 토글
+                case 'r': case 'R':
+                    this.setState({ rainMode: !this.state.rainMode });
+                    return;
+                case 'p': case 'P':
+                    this.setState({ palette: { ...this.state.palette, open: !this.state.palette.open } });
+                    return;
+                case 'd': case 'D':
+                    this.setState({ settings: { ...this.state.settings, darkMode: !this.state.settings.darkMode } });
+                    return;
+
+                // 생성 / 프리셋
+                case 'n':
+                    this.palette.openColorPicker((color) => this.canvas.spawnBubble(color));
+                    return;
+                case 'N': // Shift+N
+                    this.addPreset();
+                    return;
+                case '[': this.cyclePreset(-1); return;
+                case ']': this.cyclePreset(1); return;
+
+                // 선택 대상 액션
+                case 'm': case 'M':
+                    this.mixSelected({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+                    return;
+                case 'f': case 'F': {
+                    const ids = this.state.selectedBubbleIds;
+                    if (ids.length === 0) return;
+                    const idSet = new Set(ids);
+                    const allPinned = this.state.bubbles.filter(b => idSet.has(b.id)).every(b => b.pinned);
+                    this.pinSelected(!allPinned);
+                    return;
+                }
+                case 'Delete':
+                case 'Backspace':
+                    if (this.state.selectedColorIds.length > 0) { e.preventDefault(); this.deleteSelectedColors(); }
+                    else if (this.state.selectedBubbleIds.length > 0) { e.preventDefault(); this.deleteSelected(); }
+                    return;
+                case 'Enter':
+                    if (this.state.selectedColorIds.length > 0) this.addSelectedColorsToCanvas();
+                    return;
+            }
+        });
     }
 
     setState(nextState: Partial<State>) {
@@ -329,18 +407,18 @@ export default class App {
         if (additive) {
             const prev = this.state.selectedColorIds;
             const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-            this.setState({ selectedColorIds: next });
+            this.setState({ selectedColorIds: next, selectedBubbleIds: [] });
         } else {
-            this.setState({ selectedColorIds: [id] });
+            this.setState({ selectedColorIds: [id], selectedBubbleIds: [] });
         }
     }
 
     private applyColorMarquee(ids: string[], additive: boolean) {
         if (additive) {
             const merged = Array.from(new Set([...this.state.selectedColorIds, ...ids]));
-            this.setState({ selectedColorIds: merged });
+            this.setState({ selectedColorIds: merged, selectedBubbleIds: [] });
         } else {
-            this.setState({ selectedColorIds: ids });
+            this.setState({ selectedColorIds: ids, selectedBubbleIds: [] });
         }
     }
 
@@ -440,9 +518,9 @@ export default class App {
     private applyMarqueeSelection(ids: number[], additive: boolean) {
         if (additive) {
             const merged = Array.from(new Set([...this.state.selectedBubbleIds, ...ids]));
-            this.setState({ selectedBubbleIds: merged });
+            this.setState({ selectedBubbleIds: merged, selectedColorIds: [] });
         } else {
-            this.setState({ selectedBubbleIds: ids });
+            this.setState({ selectedBubbleIds: ids, selectedColorIds: [] });
         }
     }
 
@@ -450,9 +528,9 @@ export default class App {
         if (additive) {
             const prev = this.state.selectedBubbleIds;
             const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-            this.setState({ selectedBubbleIds: next });
+            this.setState({ selectedBubbleIds: next, selectedColorIds: [] });
         } else {
-            this.setState({ selectedBubbleIds: [id] });
+            this.setState({ selectedBubbleIds: [id], selectedColorIds: [] });
         }
     }
 
@@ -501,6 +579,32 @@ export default class App {
         this.setState({
             bubbles: this.state.bubbles.filter(b => !selected.has(b.id)),
             selectedBubbleIds: [],
+        });
+    }
+
+    private selectAllBubbles() {
+        if (this.state.bubbles.length === 0) return;
+        this.setState({
+            selectedBubbleIds: this.state.bubbles.map(b => b.id),
+            selectedColorIds: [],
+        });
+    }
+
+    private duplicateSelected() {
+        // canvas.duplicateBubble은 호출마다 state.bubbles를 갱신하지 않고 onBubbleCatch로 추가만 한다.
+        // 현재 선택 스냅샷을 먼저 떠두고 순회한다.
+        const ids = [...this.state.selectedBubbleIds];
+        ids.forEach(id => this.canvas.duplicateBubble(id));
+    }
+
+    private cyclePreset(dir: -1 | 1) {
+        const { presets, activePresetId } = this.state.palette;
+        if (presets.length === 0) return;
+        const idx = presets.findIndex(p => p.id === activePresetId);
+        const nextIdx = (idx + dir + presets.length) % presets.length;
+        this.setState({
+            palette: { ...this.state.palette, activePresetId: presets[nextIdx].id },
+            selectedColorIds: [],
         });
     }
 
