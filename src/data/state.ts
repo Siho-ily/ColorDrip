@@ -13,6 +13,7 @@ const initialState: State = {
         color: { h: 0, s: 100, l: 50 },
     },
     selectedBubbleIds: [],
+    selectedColorIds: [],
     contextMenu: { open: false, mode: 'single', bubbleId: null, x: 0, y: 0 },
     settings: {
         colorMixing: 'hsl',

@@ -1,7 +1,7 @@
 import { BackgroundLayer, Canvas, Palette, MenuBar, SettingsPanel } from '@/components/index';
 import CanvasAddButton from '@/components/canvas/CanvasAddButton';
 import type { State } from '@/types/state';
-import type { Preset } from '@/types/palette';
+import type { Preset, PresetColor } from '@/types/palette';
 import type { Settings } from '@/types/settings';
 import initialState from '@/data/state';
 import BubbleContextMenu from '../components/ContextMenu/BubbleContextMenu';
@@ -80,6 +80,7 @@ export default class App {
             onAddPreset: () => this.addPreset(),
             onSelectPreset: (presetId) => this.setState({
                 palette: { ...this.state.palette, activePresetId: presetId },
+                selectedColorIds: [],  // 프리셋 전환 시 선택 해제 (색 id는 프리셋별이라 의미가 사라짐)
             }),
             onRenamePreset: (presetId, name) => this.setState({
                 palette: {
@@ -92,24 +93,27 @@ export default class App {
             onDeletePreset: (presetId) => this.deletePreset(presetId),
             onDuplicatePreset: (presetId) => this.duplicatePreset(presetId),
             onReorderPresets: (orderedIds) => this.reorderPresets(orderedIds),
-            onColorSlotClick: (presetColor) => this.canvas.spawnBubble(presetColor.color),
+            onColorSlotSelect: (colorId, additive) => this.toggleColorSelection(colorId, additive),
+            onColorSlotActivate: (presetColor) => this.canvas.spawnBubble(presetColor.color),
+            onMarqueeSelect: (ids, additive) => this.applyColorMarquee(ids, additive),
+            onEmptySelectionClick: () => this.setState({ selectedColorIds: [] }),
             onAddColorToPreset: (color) => this.addColorToActivePreset(color),
             getPresets: () => this.state.palette.presets,
+            getActivePresetId: () => this.state.palette.activePresetId,
+            getSelectedColorIds: () => this.state.selectedColorIds,
             onEditPresetColor: (presetId, colorId, newColor) => this.editPresetColor(presetId, colorId, newColor),
             onDeletePresetColor: (presetId, colorId) => this.deletePresetColor(presetId, colorId),
             onDuplicatePresetColor: (presetId, colorId) => this.duplicatePresetColor(presetId, colorId),
             onMoveColorToPreset: (fromPresetId, colorId, toPresetId) => this.moveColorToPreset(fromPresetId, colorId, toPresetId),
             onReorderPresetColors: (presetId, newColorIds) => this.reorderPresetColors(presetId, newColorIds),
+            onMoveColorsToPreset: (fromPresetId, colorIds, toPresetId) => this.moveColorsToPreset(fromPresetId, colorIds, toPresetId),
+            onDropColorsToCanvas: (presetId, colorIds, x, y) => this.dropColorsToCanvas(presetId, colorIds, x, y),
+            onAddSelectedColorsToCanvas: () => this.addSelectedColorsToCanvas(),
+            onMoveSelectedColorsToPreset: (toPresetId) => this.moveSelectedColorsToPreset(toPresetId),
+            onDeleteSelectedColors: () => this.deleteSelectedColors(),
             onPickerNotationChange: (notation) => this.setState({
                 settings: { ...this.state.settings, pickerNotation: notation },
             }),
-            onDropColorToCanvas: (presetId, colorId, x, y) => {
-                const preset = this.state.palette.presets.find(p => p.id === presetId);
-                const presetColor = preset?.colors.find(c => c.id === colorId);
-                if (!presetColor) return;
-                const radius = radiusFromSize(this.state.settings.bubble.size);
-                this.canvas.spawnMixedBubble(presetColor.color, radius, { x, y });
-            },
         });
 
         this.settingsPanel = new SettingsPanel({
@@ -143,6 +147,9 @@ export default class App {
             if (this.state.contextMenu.open) return;
             if (this.state.selectedBubbleIds.length > 0) {
                 this.setState({ selectedBubbleIds: [] });
+            }
+            if (this.state.selectedColorIds.length > 0) {
+                this.setState({ selectedColorIds: [] });
             }
         });
 
@@ -308,6 +315,98 @@ export default class App {
                 return { ...p, colors: [...p.colors, moved] };
             });
         this.setState({ palette: { ...this.state.palette, presets } });
+    }
+
+    // ── 팔레트 색상 다중 선택 (캔버스 버블 선택 로직 미러링) ──
+
+    private toggleColorSelection(id: string, additive: boolean) {
+        if (additive) {
+            const prev = this.state.selectedColorIds;
+            const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+            this.setState({ selectedColorIds: next });
+        } else {
+            this.setState({ selectedColorIds: [id] });
+        }
+    }
+
+    private applyColorMarquee(ids: string[], additive: boolean) {
+        if (additive) {
+            const merged = Array.from(new Set([...this.state.selectedColorIds, ...ids]));
+            this.setState({ selectedColorIds: merged });
+        } else {
+            this.setState({ selectedColorIds: ids });
+        }
+    }
+
+    private selectedColorsInActivePreset(): PresetColor[] {
+        const { activePresetId, presets } = this.state.palette;
+        const preset = presets.find(p => p.id === activePresetId);
+        if (!preset) return [];
+        const idSet = new Set(this.state.selectedColorIds);
+        return preset.colors.filter(c => idSet.has(c.id));
+    }
+
+    private addSelectedColorsToCanvas() {
+        const colors = this.selectedColorsInActivePreset();
+        if (colors.length === 0) return;
+        colors.forEach(c => this.canvas.spawnBubble(c.color));
+        this.setState({ selectedColorIds: [] });
+    }
+
+    private deleteSelectedColors() {
+        const { activePresetId } = this.state.palette;
+        if (!activePresetId) return;
+        const idSet = new Set(this.state.selectedColorIds);
+        if (idSet.size === 0) return;
+        this.setState({
+            palette: {
+                ...this.state.palette,
+                presets: this.state.palette.presets.map(p =>
+                    p.id !== activePresetId ? p : { ...p, colors: p.colors.filter(c => !idSet.has(c.id)) }
+                ),
+            },
+            selectedColorIds: [],
+        });
+    }
+
+    private moveSelectedColorsToPreset(toPresetId: string) {
+        const { activePresetId } = this.state.palette;
+        if (!activePresetId) return;
+        this.moveColorsToPreset(activePresetId, this.state.selectedColorIds, toPresetId);
+    }
+
+    // 그룹 드래그/일괄 메뉴 공용. colorIds를 fromPreset에서 빼서 toPreset 끝에 붙인다.
+    private moveColorsToPreset(fromPresetId: string, colorIds: string[], toPresetId: string) {
+        if (fromPresetId === toPresetId || colorIds.length === 0) return;
+        const idSet = new Set(colorIds);
+        let moved: PresetColor[] = [];
+        const presets = this.state.palette.presets
+            .map(p => {
+                if (p.id !== fromPresetId) return p;
+                moved = p.colors.filter(c => idSet.has(c.id));
+                return { ...p, colors: p.colors.filter(c => !idSet.has(c.id)) };
+            })
+            .map(p => {
+                if (p.id !== toPresetId || moved.length === 0) return p;
+                return { ...p, colors: [...p.colors, ...moved] };
+            });
+        this.setState({ palette: { ...this.state.palette, presets }, selectedColorIds: [] });
+    }
+
+    // 그룹 드래그로 사이드바 밖에 드롭. 각 색을 드롭 좌표 주변에 살짝 흩어 스폰한다.
+    private dropColorsToCanvas(presetId: string, colorIds: string[], x: number, y: number) {
+        const preset = this.state.palette.presets.find(p => p.id === presetId);
+        if (!preset) return;
+        const idSet = new Set(colorIds);
+        const colors = preset.colors.filter(c => idSet.has(c.id));
+        if (colors.length === 0) return;
+        const radius = radiusFromSize(this.state.settings.bubble.size);
+        colors.forEach((c, i) => {
+            const dx = i === 0 ? 0 : (Math.random() - 0.5) * radius * 4;
+            const dy = i === 0 ? 0 : (Math.random() - 0.5) * radius * 4;
+            this.canvas.spawnMixedBubble(c.color, radius, { x: x + dx, y: y + dy });
+        });
+        this.setState({ selectedColorIds: [] });
     }
 
     private applyMarqueeSelection(ids: number[], additive: boolean) {

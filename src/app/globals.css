@@ -234,3 +234,15 @@ body {
         0 0 0 2px rgba(0, 0, 0, 0.95),
         0 0 0 4px rgba(255, 255, 255, 0.6);
 }
+
+/* 다중 선택된 팔레트 색상 슬롯 강조. 슬롯이 rounded-full이라 box-shadow ring이 원형 윤곽을 따라간다. */
+.swatch-selected {
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.95),
+        0 0 0 4px rgba(0, 0, 0, 0.55);
+}
+.dark .swatch-selected {
+    box-shadow:
+        0 0 0 2px rgba(0, 0, 0, 0.95),
+        0 0 0 4px rgba(255, 255, 255, 0.6);
+}
