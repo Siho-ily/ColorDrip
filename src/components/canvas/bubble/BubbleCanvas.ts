@@ -25,6 +25,7 @@ export default class BubbleCanvas {
     private height: number;
     private mouse!: Matter.Mouse;
     private isMarqueeActive = false;
+    private isDragFromOutside = false;
 
     constructor({
         $target,
@@ -82,10 +83,19 @@ export default class BubbleCanvas {
         // MouseConstraint.update는 engine.beforeUpdate마다 실행되며,
         // mouse.button === 0(눌림) + 미掴み 상태이면 마우스 위치의 body를 탐색해 잡는다.
         // marquee 드래그 중 버블이 의도치 않게 잡히는 버그를 막기 위해:
+        // mousedown이 $target 밖에서 시작된 드래그는 MouseConstraint에서 제외한다.
+        // (팔레트·메뉴바 등에서 드래그 시작 후 버블 위를 지날 때 버블이 끌려가는 버그 방지)
+        document.addEventListener('mousedown', (e) => {
+            this.isDragFromOutside = !$target.contains(e.target as Node);
+        }, { capture: true });
+        document.addEventListener('mouseup', () => {
+            this.isDragFromOutside = false;
+        }, { capture: true });
+
         // MouseConstraint.create가 자신의 beforeUpdate 리스너를 등록하기 전에
         // 우리 핸들러를 먼저 등록해 두면 매 틱마다 mouse.button을 -1로 덮어쓸 수 있다.
         Events.on(this.engine, 'beforeUpdate', () => {
-            if (this.isMarqueeActive) {
+            if (this.isMarqueeActive || this.isDragFromOutside) {
                 this.mouse.button = -1;
             }
         });

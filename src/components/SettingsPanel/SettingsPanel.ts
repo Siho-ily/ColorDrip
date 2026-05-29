@@ -152,6 +152,12 @@ export default class SettingsPanel {
             this.settings.colorNotation,
             v => this.emit({ colorNotation: v as ColorNotation }),
         );
+        this.appendSelect(
+            '피커 방식',
+            COLOR_NOTATIONS,
+            this.settings.pickerNotation,
+            v => this.emit({ pickerNotation: v as ColorNotation }),
+        );
     }
 
     private emit(partial: Partial<Settings>) {

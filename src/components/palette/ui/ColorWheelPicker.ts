@@ -14,16 +14,34 @@ import type { ColorNotation } from "@/types/settings";
  * 모든 입력은 내부적으로 chroma-js로 HslColor로 정규화되어 저장된다.
  * 외부에는 항상 HslColor만 노출한다.
  */
+
+const NOTATION_OPTIONS: { value: ColorNotation; label: string }[] = [
+    { value: 'hex',   label: 'HEX' },
+    { value: 'rgb',   label: 'RGB' },
+    { value: 'hsl',   label: 'HSL' },
+    { value: 'oklch', label: 'OKLCH' },
+];
+
 export default class ColorWheelPicker {
     private $el: HTMLDivElement;
     private $card: HTMLDivElement;
+    private $notationRow: HTMLDivElement;
     private $inputs: HTMLDivElement;
     private $preview: HTMLDivElement;
     private current: HslColor = { h: 0, s: 100, l: 50 };
     private notation: ColorNotation = 'hex';
     private onColorSelect: ((color: HslColor) => void) | null = null;
+    private readonly onPickerNotationChange: ((n: ColorNotation) => void) | undefined;
 
-    constructor({ $target }: { $target: HTMLElement }) {
+    constructor({
+        $target,
+        onPickerNotationChange,
+    }: {
+        $target: HTMLElement;
+        onPickerNotationChange?: (n: ColorNotation) => void;
+    }) {
+        this.onPickerNotationChange = onPickerNotationChange;
+
         this.$el = document.createElement('div');
         this.$el.className = [
             'fixed inset-0 z-50 flex items-center justify-center hidden',
@@ -54,6 +72,11 @@ export default class ColorWheelPicker {
         this.$preview.className = 'w-full h-14 rounded-lg border border-border';
         this.$card.appendChild(this.$preview);
 
+        // 표기 방식 스위처
+        this.$notationRow = document.createElement('div');
+        this.$notationRow.className = 'flex gap-1 p-1 bg-muted rounded-lg';
+        this.$card.appendChild(this.$notationRow);
+
         // 입력 UI 컨테이너 — notation에 따라 buildInputs()가 채운다
         this.$inputs = document.createElement('div');
         this.$inputs.className = 'flex flex-col gap-3';
@@ -77,8 +100,30 @@ export default class ColorWheelPicker {
             if (e.target === this.$el) this.close();
         });
 
+        this.buildNotationSwitcher();
         this.buildInputs();
         this.updatePreview();
+    }
+
+    private buildNotationSwitcher() {
+        this.$notationRow.innerHTML = '';
+        NOTATION_OPTIONS.forEach(({ value, label }) => {
+            const $btn = document.createElement('button');
+            $btn.textContent = label;
+            $btn.className = [
+                'flex-1 py-1 text-xs rounded-md font-medium transition-colors',
+                value === this.notation
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+            ].join(' ');
+            $btn.addEventListener('click', () => {
+                this.notation = value;
+                this.buildNotationSwitcher();
+                this.buildInputs();
+                this.onPickerNotationChange?.(value);
+            });
+            this.$notationRow.appendChild($btn);
+        });
     }
 
     /** 표기 방식에 맞는 입력 컨트롤을 새로 생성. this.current를 기준으로 초기값을 채운다. */
@@ -226,7 +271,7 @@ export default class ColorWheelPicker {
         }
         this.onColorSelect = onColorSelect;
         this.$el.classList.remove('hidden');
-        // 입력 UI는 현재 notation 기준으로 다시 생성한다 — initial 또는 notation 변경 반영
+        this.buildNotationSwitcher();
         this.buildInputs();
         this.updatePreview();
     }
@@ -238,9 +283,9 @@ export default class ColorWheelPicker {
 
     setState(state: State) {
         const prev = this.notation;
-        this.notation = state.settings.colorNotation;
-        // 픽커가 열려있을 때 notation이 바뀌면 입력 UI를 즉시 교체
+        this.notation = state.settings.pickerNotation;
         if (prev !== this.notation && !this.$el.classList.contains('hidden')) {
+            this.buildNotationSwitcher();
             this.buildInputs();
         }
     }

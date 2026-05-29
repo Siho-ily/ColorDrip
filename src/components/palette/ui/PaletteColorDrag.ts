@@ -17,6 +17,8 @@ export default class PaletteColorDrag {
     private highlightedTab: HTMLElement | null = null;
     private dropType: 'reorder' | 'preset' | 'canvas' | null = null;
     private insertIndex = 0;
+    private lastDropX = 0;
+    private lastDropY = 0;
 
     constructor(
         private readonly getSidebarEl: () => HTMLElement,
@@ -24,7 +26,7 @@ export default class PaletteColorDrag {
         private readonly getSlotEls: () => HTMLElement[],
         private readonly onReorder: (presetId: string, newColorIds: string[]) => void,
         private readonly onMoveToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void,
-        private readonly onDropToCanvas: (presetId: string, colorId: string) => void,
+        private readonly onDropToCanvas: (presetId: string, colorId: string, x: number, y: number) => void,
     ) {
         this.$dangerZone = this.createDangerZone();
         this.$indicator = this.createIndicator();
@@ -61,6 +63,8 @@ export default class PaletteColorDrag {
 
     private readonly onMove = (e: PointerEvent) => {
         if (!this.$ghost) return;
+        this.lastDropX = e.clientX;
+        this.lastDropY = e.clientY;
         this.$ghost.style.left = `${e.clientX}px`;
         this.$ghost.style.top = `${e.clientY}px`;
         this.update(e.clientX, e.clientY);
@@ -78,7 +82,7 @@ export default class PaletteColorDrag {
         } else if (this.dropType === 'preset' && this.highlightedTab) {
             this.onMoveToPreset(presetId, colorId, this.highlightedTab.dataset.presetId!);
         } else if (this.dropType === 'canvas') {
-            this.onDropToCanvas(presetId, colorId);
+            this.onDropToCanvas(presetId, colorId, this.lastDropX, this.lastDropY);
         }
 
         this.cleanup();
@@ -224,18 +228,17 @@ export default class PaletteColorDrag {
             display: 'none',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(to right, rgba(239,68,68,0.12), rgba(239,68,68,0.02))',
-            borderRight: '2px dashed rgba(239,68,68,0.4)',
+            background: 'linear-gradient(to right, rgba(99,102,241,0.10), rgba(99,102,241,0.02))',
+            borderRight: '2px dashed rgba(99,102,241,0.35)',
         });
         $el.innerHTML = `
-            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(239,68,68,0.75);user-select:none">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(99,102,241,0.8);user-select:none">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14H6L5 6"></path>
-                    <path d="M10 11v6M14 11v6"></path>
-                    <path d="M9 6V4h6v2"></path>
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
-                <span style="font-size:0.75rem;font-weight:600;letter-spacing:0.01em">팔레트에서 제거</span>
+                <span style="font-size:0.75rem;font-weight:600;letter-spacing:0.01em">캔버스에 추가</span>
             </div>
         `;
         document.body.appendChild($el);

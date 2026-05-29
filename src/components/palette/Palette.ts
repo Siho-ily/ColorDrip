@@ -2,6 +2,7 @@ import type { State } from "@/types/state";
 import type { HslColor } from "@/types/bubble";
 import type { PresetColor, Preset } from "@/types/palette";
 import type { ColorNotation } from "@/types/settings";
+
 import ColorWheelPicker from './ui/ColorWheelPicker';
 import PaletteSidebar from './ui/PaletteSidebar';
 import PresetPickerModal from './ui/PresetPickerModal';
@@ -30,6 +31,8 @@ export default class Palette {
         onDuplicatePresetColor,
         onMoveColorToPreset,
         onReorderPresetColors,
+        onPickerNotationChange,
+        onDropColorToCanvas,
     }: {
         $target: HTMLElement;
         onAddPreset: () => void;
@@ -46,8 +49,10 @@ export default class Palette {
         onDuplicatePresetColor: (presetId: string, colorId: string) => void;
         onMoveColorToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void;
         onReorderPresetColors: (presetId: string, newColorIds: string[]) => void;
+        onPickerNotationChange: (notation: ColorNotation) => void;
+        onDropColorToCanvas: (presetId: string, colorId: string, x: number, y: number) => void;
     }) {
-        this.colorWheelPicker = new ColorWheelPicker({ $target });
+        this.colorWheelPicker = new ColorWheelPicker({ $target, onPickerNotationChange });
         this.presetPickerModal = new PresetPickerModal();
 
         this.colorSlotContextMenu = new ColorSlotContextMenu({
@@ -74,7 +79,7 @@ export default class Palette {
                 this.colorSlotContextMenu.open(presetId, colorId, color, rect),
             onReorderColors: onReorderPresetColors,
             onMoveColorToPreset,
-            onDropColorToCanvas: onDeletePresetColor,
+            onDropColorToCanvas,
             getColorNotation: () => this.colorNotation,
         });
     }

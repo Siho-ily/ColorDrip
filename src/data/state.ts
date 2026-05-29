@@ -17,6 +17,7 @@ const initialState: State = {
     settings: {
         colorMixing: 'hsl',
         colorNotation: 'hex',
+        pickerNotation: 'hex',
         darkMode: false,
         rain: { speed: 10, density: 10, size: 5, wind: 2.5 },
         bubble: { size: 5 },

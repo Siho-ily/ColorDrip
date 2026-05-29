@@ -100,6 +100,16 @@ export default class App {
             onDuplicatePresetColor: (presetId, colorId) => this.duplicatePresetColor(presetId, colorId),
             onMoveColorToPreset: (fromPresetId, colorId, toPresetId) => this.moveColorToPreset(fromPresetId, colorId, toPresetId),
             onReorderPresetColors: (presetId, newColorIds) => this.reorderPresetColors(presetId, newColorIds),
+            onPickerNotationChange: (notation) => this.setState({
+                settings: { ...this.state.settings, pickerNotation: notation },
+            }),
+            onDropColorToCanvas: (presetId, colorId, x, y) => {
+                const preset = this.state.palette.presets.find(p => p.id === presetId);
+                const presetColor = preset?.colors.find(c => c.id === colorId);
+                if (!presetColor) return;
+                const radius = radiusFromSize(this.state.settings.bubble.size);
+                this.canvas.spawnMixedBubble(presetColor.color, radius, { x, y });
+            },
         });
 
         this.settingsPanel = new SettingsPanel({
@@ -168,6 +178,7 @@ export default class App {
             });
         }
 
+        this.canvasAddButton.setRightOffset(this.palette.getOccupiedWidth());
         this.menuBar.setState(this.state);
         this.settingsPanel.setState(this.state.settings);
     }

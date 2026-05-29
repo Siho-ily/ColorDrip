@@ -37,7 +37,7 @@ export default class CanvasAddButton {
             borderRadius: '16px',
             boxShadow: 'var(--glass-shadow)',
             cursor: 'pointer',
-            transition: 'background 0.15s',
+            transition: 'background 0.15s, right 0.2s ease-out',
         } as Partial<CSSStyleDeclaration>);
 
         this.$el.addEventListener('pointerenter', () => {
@@ -49,5 +49,9 @@ export default class CanvasAddButton {
         this.$el.addEventListener('click', onClick);
 
         $target.appendChild(this.$el);
+    }
+
+    setRightOffset(paletteWidth: number) {
+        this.$el.style.right = `${16 + paletteWidth}px`;
     }
 }

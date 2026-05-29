@@ -40,11 +40,11 @@ export default class PaletteSidebar {
         onColorSlotContextMenu: (presetId: string, colorId: string, color: HslColor, rect: DOMRect) => void;
         onReorderColors: (presetId: string, newColorIds: string[]) => void;
         onMoveColorToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void;
-        onDropColorToCanvas: (presetId: string, colorId: string) => void;
+        onDropColorToCanvas: (presetId: string, colorId: string, x: number, y: number) => void;
         getColorNotation: () => ColorNotation;
     }) {
         this.$el = document.createElement('div');
-        this.$el.className = 'fixed right-0 top-0 h-full z-30 flex translate-x-full pointer-events-none transition-transform duration-200 ease-out';
+        this.$el.className = 'fixed right-0 top-0 h-full z-30 flex translate-x-full pointer-events-none transition-transform duration-200 ease-out select-none';
         $target.appendChild(this.$el);
 
         this.tabBar = new PaletteTabBar({

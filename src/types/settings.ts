@@ -30,7 +30,8 @@ export type ColorNotation = 'hex' | 'rgb' | 'hsl' | 'oklch';
 
 export interface Settings {
     colorMixing: ColorSpace;        // 색상 혼합에 사용할 색 공간 (mixColors)
-    colorNotation: ColorNotation;   // hover 툴팁 및 컬러피커 입력 모드의 표기 형식
+    colorNotation: ColorNotation;   // hover 툴팁 표기 형식
+    pickerNotation: ColorNotation;  // 컬러 피커 입력 모드 표기 형식
     darkMode: boolean;              // 다크 모드
     rain: RainSettings;             // 비 관련 세부 설정
     bubble: BubbleSettings;         // 버블 관련 세부 설정
