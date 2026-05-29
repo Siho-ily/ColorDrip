@@ -222,17 +222,24 @@ body {
     100% { transform: scale(1);    opacity: 1; }
 }
 
-/* 다중 선택된 버블 강조 — outer의 직계 자식(inner)에 ring 효과를 준다.
-   inner가 rounded-full이라 box-shadow가 원형 윤곽을 따라가게 된다. */
+/* 선택된 버블 — 바깥 단일 링, 테마 배경의 반대색 */
 .bubble-selected > div {
-    box-shadow:
-        0 0 0 2px rgba(255, 255, 255, 0.95),
-        0 0 0 4px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.65);
 }
 .dark .bubble-selected > div {
-    box-shadow:
-        0 0 0 2px rgba(0, 0, 0, 0.95),
-        0 0 0 4px rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9);
+}
+
+/* 고정된 버블 — 버블 안쪽에 그려지는 링 (outline 음수 offset).
+   버블 가장자리와 링 사이에 버블 색이 드러난다.
+   outline과 box-shadow는 독립적이므로 선택 + 고정 동시 상태도 자동으로 처리된다. */
+/* outline-width, outline-offset은 BubbleLayer.setBubblePinned에서 반지름 비례로 설정 */
+.bubble-pinned > div {
+    outline-style: solid;
+    outline-color: rgba(255, 255, 255, 0.9);
+}
+.dark .bubble-pinned > div {
+    outline-color: rgba(0, 0, 0, 0.7);
 }
 
 /* 다중 선택된 팔레트 색상 슬롯 강조. 슬롯이 rounded-full이라 box-shadow ring이 원형 윤곽을 따라간다. */

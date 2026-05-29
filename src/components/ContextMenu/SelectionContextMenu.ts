@@ -16,6 +16,7 @@ export default class SelectionContextMenu {
     private readonly onMix: (point: { x: number; y: number }) => void;
     private readonly onDelete: () => void;
     private readonly onSaveToPreset: () => void;
+    private readonly onPinToggle: (shouldPin: boolean) => void;
 
     constructor({
         getState,
@@ -23,18 +24,21 @@ export default class SelectionContextMenu {
         onMix,
         onDelete,
         onSaveToPreset,
+        onPinToggle,
     }: {
         getState: () => State;
         setState: (next: Partial<State>) => void;
         onMix: (point: { x: number; y: number }) => void;
         onDelete: () => void;
         onSaveToPreset: () => void;
+        onPinToggle: (shouldPin: boolean) => void;
     }) {
         this.getState = getState;
         this.setState = setState;
         this.onMix = onMix;
         this.onDelete = onDelete;
         this.onSaveToPreset = onSaveToPreset;
+        this.onPinToggle = onPinToggle;
 
         this.menu = new ContextMenu({
             onClose: () => {
@@ -51,9 +55,15 @@ export default class SelectionContextMenu {
     }
 
     private buildMenuItems(count: number, point: { x: number; y: number }): MenuItemDef[] {
+        const { bubbles, selectedBubbleIds } = this.getState();
+        const selected = bubbles.filter(b => selectedBubbleIds.includes(b.id));
+        const allPinned = selected.length > 0 && selected.every(b => b.pinned);
+
         return [
             { kind: 'action', id: 'save-palette', label: `팔레트에 저장 (${count})`, onSelect: () => this.onSaveToPreset() },
             { kind: 'action', id: 'mix',          label: `선택한 ${count}개 혼합`, disabled: count < 2, onSelect: () => this.onMix(point) },
+            { kind: 'separator' },
+            { kind: 'action', id: 'pin',          label: allPinned ? `고정 해제 (${count})` : `위치 고정 (${count})`, onSelect: () => this.onPinToggle(!allPinned) },
             { kind: 'separator' },
             { kind: 'action', id: 'delete',       label: `버블 ${count}개 삭제`, danger: true, onSelect: () => this.onDelete() },
         ];

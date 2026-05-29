@@ -106,6 +106,8 @@ export default class Canvas {
 
     freezeBubble(id: number) { this.bubbleCanvas.freezeBubble(id); }
     unfreezeBubble(id: number) { this.bubbleCanvas.unfreezeBubble(id); }
+    pinBubble(id: number) { this.bubbleCanvas.pinBubble(id); }
+    unpinBubble(id: number) { this.bubbleCanvas.unpinBubble(id); }
 
     /** 버블 복제: 현재 위치 근처에 같은 색/크기의 새 버블을 spring 애니메이션으로 생성 */
     duplicateBubble(id: number) {
@@ -213,5 +215,9 @@ export default class Canvas {
         if (prev.selectedBubbleIds !== this.state.selectedBubbleIds) {
             this.bubbleLayer.syncSelection(new Set(this.state.selectedBubbleIds));
         }
+
+        this.state.bubbles.forEach(b => {
+            this.bubbleLayer.setBubblePinned(b.id, b.pinned ?? false);
+        });
     }
 }

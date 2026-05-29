@@ -48,6 +48,8 @@ export default class App {
         this.bubbleContextMenu = new BubbleContextMenu({
             onFreeze:   (id) => this.canvas.freezeBubble(id),
             onUnfreeze: (id) => this.canvas.unfreezeBubble(id),
+            onPin:      (id) => this.canvas.pinBubble(id),
+            onUnpin:    (id) => this.canvas.unpinBubble(id),
             getState:   () => this.state,
             setState:   (next) => this.setState(next),
             onSaveToPreset: (bubbleId) => this.saveToActivePreset(bubbleId),
@@ -60,6 +62,7 @@ export default class App {
             onMix:    (point) => this.mixSelected(point),
             onDelete: () => this.deleteSelected(),
             onSaveToPreset: () => this.saveSelectedToActivePreset(),
+            onPinToggle: (shouldPin) => this.pinSelected(shouldPin),
         });
 
         this.canvas = new Canvas({
@@ -478,6 +481,18 @@ export default class App {
 
         this.canvas.spawnMixedBubble(mixed, avgRadius, point);
         this.setState({ selectedBubbleIds: [] });
+    }
+
+    private pinSelected(shouldPin: boolean) {
+        const ids = this.state.selectedBubbleIds;
+        if (ids.length === 0) return;
+        const idSet = new Set(ids);
+        ids.forEach(id => shouldPin ? this.canvas.pinBubble(id) : this.canvas.unpinBubble(id));
+        this.setState({
+            bubbles: this.state.bubbles.map(b =>
+                idSet.has(b.id) ? { ...b, pinned: shouldPin } : b
+            ),
+        });
     }
 
     private deleteSelected() {

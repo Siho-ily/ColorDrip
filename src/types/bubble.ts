@@ -17,4 +17,5 @@ export interface Bubble {
     position: { x: number; y: number };         // 중심 좌표 (px). BubbleLayer 기준
     velocity: { x: number; y: number };         // catch 시점 속도 → float 애니메이션 초기값
     state: BubbleLifecycle;                     // 현재 생명주기 단계
+    pinned?: boolean;                           // true이면 물리 상호작용 없이 위치 고정
 }

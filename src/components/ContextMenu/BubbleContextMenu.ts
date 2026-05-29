@@ -7,6 +7,8 @@ export default class BubbleContextMenu {
     private menu: ContextMenu;
     private readonly onFreeze: (id: number) => void;
     private readonly onUnfreeze: (id: number) => void;
+    private readonly onPin: (id: number) => void;
+    private readonly onUnpin: (id: number) => void;
     private readonly getState: () => State;
     private readonly setState: (next: Partial<State>) => void;
     private readonly onSaveToPreset: (bubbleId: number) => void;
@@ -15,6 +17,8 @@ export default class BubbleContextMenu {
     constructor({
         onFreeze,
         onUnfreeze,
+        onPin,
+        onUnpin,
         getState,
         setState,
         onSaveToPreset,
@@ -22,6 +26,8 @@ export default class BubbleContextMenu {
     }: {
         onFreeze: (id: number) => void;
         onUnfreeze: (id: number) => void;
+        onPin: (id: number) => void;
+        onUnpin: (id: number) => void;
         getState: () => State;
         setState: (next: Partial<State>) => void;
         onSaveToPreset: (bubbleId: number) => void;
@@ -29,6 +35,8 @@ export default class BubbleContextMenu {
     }) {
         this.onFreeze = onFreeze;
         this.onUnfreeze = onUnfreeze;
+        this.onPin = onPin;
+        this.onUnpin = onUnpin;
         this.getState = getState;
         this.setState = setState;
         this.onSaveToPreset = onSaveToPreset;
@@ -61,6 +69,8 @@ export default class BubbleContextMenu {
         const hslStr   = formatColor(bubble.color, 'hsl');
         const oklchStr = formatColor(bubble.color, 'oklch');
 
+        const isPinned = bubble.pinned ?? false;
+
         return [
             {
                 kind: 'submenu',
@@ -77,6 +87,29 @@ export default class BubbleContextMenu {
             { kind: 'action', id: 'edit-color',   label: '색상 편집',    onSelect: () => { /* TODO: open picker */ } },
             { kind: 'action', id: 'save-palette', label: '팔레트에 저장', onSelect: () => this.onSaveToPreset(bubbleId) },
             { kind: 'action', id: 'duplicate',    label: '버블 복제',    onSelect: () => this.onDuplicate(bubbleId) },
+            { kind: 'separator' },
+            {
+                kind: 'action',
+                id: 'pin',
+                label: isPinned ? '고정 해제' : '위치 고정',
+                onSelect: () => {
+                    if (isPinned) {
+                        this.onUnpin(bubbleId);
+                        this.setState({
+                            bubbles: this.getState().bubbles.map(b =>
+                                b.id === bubbleId ? { ...b, pinned: false } : b
+                            ),
+                        });
+                    } else {
+                        this.onPin(bubbleId);
+                        this.setState({
+                            bubbles: this.getState().bubbles.map(b =>
+                                b.id === bubbleId ? { ...b, pinned: true } : b
+                            ),
+                        });
+                    }
+                },
+            },
             { kind: 'separator' },
             {
                 kind: 'action',

@@ -13,7 +13,7 @@ import { showTooltip, hideTooltip, moveTooltip } from '@/components/global/ui/Co
  */
 export default class BubbleLayer {
     private $el: HTMLDivElement;
-    private bubbleMap = new Map<number, { $el: HTMLDivElement; radius: number }>();
+    private bubbleMap = new Map<number, { $el: HTMLDivElement; $inner: HTMLDivElement; radius: number }>();
     private readonly onBubbleClick: (id: number, additive: boolean) => void;
     private readonly onBubbleContextMenu: (id: number, bubbleRect: DOMRect, point: { x: number; y: number }) => void;
     private readonly getColorNotation: () => ColorNotation;
@@ -77,7 +77,7 @@ export default class BubbleLayer {
         $outer.addEventListener('pointermove', (e) => moveTooltip(e.clientX, e.clientY));
         $outer.addEventListener('pointerleave', () => hideTooltip());
 
-        this.bubbleMap.set(bubble.id, { $el: $outer, radius: bubble.radius });
+        this.bubbleMap.set(bubble.id, { $el: $outer, $inner, radius: bubble.radius });
         this.$el.appendChild($outer);
 
         if (animate === 'spring') {
@@ -107,6 +107,10 @@ export default class BubbleLayer {
         entry.$el.style.width = `${newRadius * 2}px`;
         entry.$el.style.height = `${newRadius * 2}px`;
         entry.radius = newRadius;
+        if (entry.$el.classList.contains('bubble-pinned')) {
+            entry.$inner.style.outlineWidth  = this.pinRingWidth(newRadius);
+            entry.$inner.style.outlineOffset = this.pinRingOffset(newRadius);
+        }
     }
 
     syncPositions(updates: { id: number; x: number; y: number }[]) {
@@ -121,6 +125,29 @@ export default class BubbleLayer {
         this.bubbleMap.forEach((entry, id) => {
             entry.$el.classList.toggle('bubble-selected', ids.has(id));
         });
+    }
+
+    setBubblePinned(id: number, pinned: boolean) {
+        const entry = this.bubbleMap.get(id);
+        if (!entry) return;
+        entry.$el.classList.toggle('bubble-pinned', pinned);
+        if (pinned) {
+            entry.$inner.style.outlineWidth  = this.pinRingWidth(entry.radius);
+            entry.$inner.style.outlineOffset = this.pinRingOffset(entry.radius);
+        } else {
+            entry.$inner.style.outlineWidth  = '';
+            entry.$inner.style.outlineOffset = '';
+        }
+    }
+
+    // 링 두께: radius * 0.18, 최소 2px
+    private pinRingWidth(radius: number): string {
+        return `${Math.max(2, Math.round(radius * 0.18))}px`;
+    }
+
+    // 바깥 갭: radius * 0.32, 최소 5px (링 바깥쪽 끝이 여기서 시작)
+    private pinRingOffset(radius: number): string {
+        return `-${Math.max(5, Math.round(radius * 0.32))}px`;
     }
 
     /** marquee 교차 판정용 — id → viewport 기준 DOMRect */

@@ -22,6 +22,7 @@ export default class BubbleCanvas {
     private walls: Matter.Body[] = [];
     private bodyMap = new Map<number, Matter.Body>();  // bubble.id → Matter.Body
     private reverseBodyMap = new Map<Matter.Body, number>();  // Matter.Body → bubble.id
+    private pinnedIds = new Set<number>();  // 고정된 버블 id 목록 — unfreezeBubble이 고정을 해제하지 않도록 구분
     private width: number;
     private height: number;
     private mouse!: Matter.Mouse;
@@ -157,6 +158,7 @@ export default class BubbleCanvas {
         World.remove(this.engine.world, body);
         this.bodyMap.delete(id);
         this.reverseBodyMap.delete(body);
+        this.pinnedIds.delete(id);
     }
 
     resizeBubble(id: number, newRadius: number) {
@@ -193,10 +195,32 @@ export default class BubbleCanvas {
         Body.setStatic(body, true);
     }
 
+    /** 컨텍스트 메뉴 닫힘 등 일시적 고정 해제. 핀 고정 중인 버블은 건드리지 않는다. */
     unfreezeBubble(id: number) {
+        if (this.pinnedIds.has(id)) return;
         const body = this.bodyMap.get(id);
         if (!body) return;
         Body.setStatic(body, false);
+    }
+
+    /** 사용자가 명시적으로 고정 — 컨텍스트 메뉴 닫혀도 static 유지 */
+    pinBubble(id: number) {
+        this.pinnedIds.add(id);
+        const body = this.bodyMap.get(id);
+        if (!body) return;
+        Body.setStatic(body, true);
+    }
+
+    /** 고정 해제 — 살짝 랜덤 velocity를 줘서 자연스럽게 떠돌기 시작 */
+    unpinBubble(id: number) {
+        this.pinnedIds.delete(id);
+        const body = this.bodyMap.get(id);
+        if (!body) return;
+        Body.setStatic(body, false);
+        Body.setVelocity(body, {
+            x: (Math.random() - 0.5) * 2,
+            y: (Math.random() - 0.5) * 2,
+        });
     }
 
     private addWalls(width: number, height: number) {
