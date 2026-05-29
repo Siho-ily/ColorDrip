@@ -1,4 +1,5 @@
 import { BackgroundLayer, Canvas, Palette, MenuBar, SettingsPanel } from '@/components/index';
+import CanvasAddButton from '@/components/canvas/CanvasAddButton';
 import type { State } from '@/types/state';
 import type { Preset } from '@/types/palette';
 import type { Settings } from '@/types/settings';
@@ -23,6 +24,7 @@ export default class App {
     private palette: Palette;
     private menuBar: MenuBar;
     private settingsPanel: SettingsPanel;
+    private canvasAddButton: CanvasAddButton;
 
     constructor({ $app }: { $app: HTMLElement }) {
         const savedPalette = loadPaletteStore();
@@ -118,6 +120,11 @@ export default class App {
             }),
             onSettingsToggle: (anchorRect) => this.settingsPanel.toggle(anchorRect),
             getOccupiedRightWidth: () => this.palette.getOccupiedWidth(),
+        });
+
+        this.canvasAddButton = new CanvasAddButton({
+            $target: $app,
+            onClick: () => this.palette.openColorPicker((color) => this.canvas.spawnBubble(color)),
         });
 
         // Escape로 선택 해제. ContextMenu가 열려 있으면 ContextMenu 자체 Escape에 양보.

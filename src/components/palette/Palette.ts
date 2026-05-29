@@ -85,6 +85,11 @@ export default class Palette {
         this.paletteSidebar.setState(nextState);
     }
 
+    /** 외부 트리거(예: 캔버스 FAB)에서 컬러피커를 열기 위한 노출 메서드. */
+    openColorPicker(onConfirm: (color: HslColor) => void, initial?: HslColor) {
+        this.colorWheelPicker.open(onConfirm, initial);
+    }
+
     getOccupiedWidth(): number {
         return this.paletteSidebar.getOccupiedWidth();
     }
