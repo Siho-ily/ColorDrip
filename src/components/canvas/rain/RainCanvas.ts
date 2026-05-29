@@ -196,6 +196,18 @@ export default class RainCanvas {
         const prev = this.state;
         this.state = { ...this.state, ...nextState };
 
+        // 속도가 바뀌면 기존 drops의 vy를 비율로 스케일 후 vx도 재계산 — 각도(noiseRatio)는 유지
+        const prevSpeed = prev.settings.rain.speed;
+        const newSpeed = this.state.settings.rain.speed;
+        if (prevSpeed !== newSpeed) {
+            const speedRatio = newSpeed / prevSpeed;
+            const windRatio = this.state.settings.rain.wind / WIND_SCALE;
+            this.drops.forEach(drop => {
+                drop.vy *= speedRatio;
+                Matter.Body.setVelocity(drop.body, { x: drop.vy * (windRatio + drop.noiseRatio), y: drop.vy });
+            });
+        }
+
         // 바람이 바뀌면 기존 drops의 x 속도를 즉시 교체 — 개별 noiseRatio·vy는 유지
         // 수평속도는 수직속도에 비례(vx = vy * (ratio + noiseRatio))하므로 각도만 바뀌고 속력은 유지
         const prevWind = prev.settings.rain.wind;

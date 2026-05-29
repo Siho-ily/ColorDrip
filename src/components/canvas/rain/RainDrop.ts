@@ -1,6 +1,5 @@
 import Matter from 'matter-js';
 import type { HslColor } from '@/types/bubble';
-import { DROP_RESTITUTION } from '@/data/constants';
 
 function hslToCss({ h, s, l }: HslColor) {
     return `hsl(${h}, ${s}%, ${l}%)`;
@@ -59,8 +58,8 @@ export default class RainDrop {
     readonly color: HslColor;       // 빗방울 색상 — catch 시 Bubble로 전달됨
     /** lean 비율(vx/vy) 노이즈 성분. 바람 변경 시 개별 편차를 유지하기 위해 저장 */
     readonly noiseRatio: number;
-    /** 생성 시 고정된 y 속도. 바람 변경 시 감쇠된 velocity.y 대신 이 값을 사용 */
-    readonly vy: number;
+    /** 낙하 y 속도 기준값. 바람·속도 변경 시 갱신되며, vx 재계산의 기준으로 사용 */
+    vy: number;
 
     constructor({
         x,
@@ -84,7 +83,6 @@ export default class RainDrop {
         this.vy = vy;
 
         this.body = Matter.Bodies.circle(x, y, radius, {
-            restitution: DROP_RESTITUTION,
             frictionAir: 0,  // 공기 저항 제거 — 속도 감쇠 없이 등속 유지
             // 같은 음수 group끼리는 절대 충돌하지 않음 — 빗방울끼리 서로 통과시킨다
             collisionFilter: { group: -1 },
