@@ -8,6 +8,7 @@ import PaletteColorDrag from './PaletteColorDrag';
 
 export default class PaletteSidebar {
     private $el: HTMLDivElement;
+    private $dropZone: HTMLDivElement;
     private tabBar: PaletteTabBar;
     private slotPanel: PaletteSlotPanel;
     private colorDrag: PaletteColorDrag;
@@ -78,6 +79,22 @@ export default class PaletteSidebar {
             onDropColorsToCanvas,
         );
 
+        // 버블을 팔레트 위로 드래그할 때 나타나는 드롭 존. pointer-events: none이라 하위 조작을 막지 않는다.
+        this.$dropZone = document.createElement('div');
+        this.$dropZone.className = 'absolute inset-0 z-50 hidden flex-col items-center justify-center gap-2 pointer-events-none';
+        Object.assign(this.$dropZone.style, {
+            background: 'rgba(99,102,241,0.12)',
+            border: '2px dashed rgba(99,102,241,0.5)',
+            borderRadius: '0',
+        });
+        this.$dropZone.innerHTML = `
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(99,102,241,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12l7 7 7-7"/>
+            </svg>
+            <span style="font-size:0.7rem;font-weight:600;color:rgba(99,102,241,0.9);text-align:center;line-height:1.4;letter-spacing:0.01em">프리셋에 추가</span>
+        `;
+        this.$el.appendChild(this.$dropZone);
+
         this.slotPanel = new PaletteSlotPanel({
             $target: this.$el,
             onColorSlotSelect,
@@ -120,5 +137,16 @@ export default class PaletteSidebar {
     getOccupiedWidth(): number {
         if (this.$el.classList.contains('translate-x-full')) return 0;
         return this.$el.offsetWidth;
+    }
+
+    // 버블 드래그 드롭 존 오버레이 표시/숨김. 팔레트가 열려 있을 때만 표시한다.
+    setDropZoneVisible(show: boolean) {
+        if (show && !this.$el.classList.contains('translate-x-full')) {
+            this.$dropZone.classList.remove('hidden');
+            this.$dropZone.classList.add('flex');
+        } else {
+            this.$dropZone.classList.add('hidden');
+            this.$dropZone.classList.remove('flex');
+        }
     }
 }

@@ -141,4 +141,9 @@ export default class Palette {
     getOccupiedWidth(): number {
         return this.paletteSidebar.getOccupiedWidth();
     }
+
+    /** 버블 드래그 시 팔레트 드롭 존 오버레이를 켜거나 끈다. */
+    setDropZoneVisible(show: boolean) {
+        this.paletteSidebar.setDropZoneVisible(show);
+    }
 }

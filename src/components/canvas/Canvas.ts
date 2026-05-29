@@ -34,6 +34,8 @@ export default class Canvas {
         onMarqueeEnd,
         onEmptyClick,
         onEmptyContextMenu,
+        onBubbleDragStart,
+        onBubbleDragEnd,
     }: {
         $target: HTMLElement;
         initState: State;
@@ -43,6 +45,8 @@ export default class Canvas {
         onMarqueeEnd: (ids: number[], additive: boolean) => void;
         onEmptyClick: () => void;
         onEmptyContextMenu: (point: { x: number; y: number }) => void;
+        onBubbleDragStart?: (id: number) => void;
+        onBubbleDragEnd?: (id: number, x: number, y: number) => void;
     }) {
         this.$el = document.createElement('div');
         this.$el.className = 'absolute inset-0 z-10 select-none';
@@ -61,6 +65,8 @@ export default class Canvas {
         this.bubbleCanvas = new BubbleCanvas({
             $target: this.$el,
             onPositionUpdate: (updates) => this.bubbleLayer.syncPositions(updates),
+            onBubbleDragStart,
+            onBubbleDragEnd,
         });
 
         this.selectionLayer = new SelectionLayer({

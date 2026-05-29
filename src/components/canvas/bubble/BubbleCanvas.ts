@@ -21,6 +21,7 @@ export default class BubbleCanvas {
     private runner: Matter.Runner;
     private walls: Matter.Body[] = [];
     private bodyMap = new Map<number, Matter.Body>();  // bubble.id → Matter.Body
+    private reverseBodyMap = new Map<Matter.Body, number>();  // Matter.Body → bubble.id
     private width: number;
     private height: number;
     private mouse!: Matter.Mouse;
@@ -30,9 +31,13 @@ export default class BubbleCanvas {
     constructor({
         $target,
         onPositionUpdate,
+        onBubbleDragStart,
+        onBubbleDragEnd,
     }: {
         $target: HTMLElement;
         onPositionUpdate: (updates: { id: number; x: number; y: number }[]) => void;
+        onBubbleDragStart?: (id: number) => void;
+        onBubbleDragEnd?: (id: number, x: number, y: number) => void;
     }) {
         this.engine = Engine.create({ gravity: { x: 0, y: 0 } });
 
@@ -106,6 +111,18 @@ export default class BubbleCanvas {
         });
         World.add(this.engine.world, mouseConstraint);
 
+        // startdrag/enddrag: MouseConstraint가 body를 잡거나 놓을 때 발생.
+        // reverseBodyMap으로 body → bubbleId를 역조회해 콜백에 id를 넘긴다.
+        // 타입 정의의 IEvent<MouseConstraint>에 body가 없지만 런타임에는 포함된다.
+        Events.on(mouseConstraint, 'startdrag', (e: any) => {
+            const id = this.reverseBodyMap.get(e.body as Matter.Body);
+            if (id !== undefined) onBubbleDragStart?.(id);
+        });
+        Events.on(mouseConstraint, 'enddrag', (e: any) => {
+            const id = this.reverseBodyMap.get(e.body as Matter.Body);
+            if (id !== undefined) onBubbleDragEnd?.(id, this.mouse.position.x, this.mouse.position.y);
+        });
+
         this.runner = Runner.create();
         Runner.run(this.runner, this.engine);
 
@@ -130,6 +147,7 @@ export default class BubbleCanvas {
             y: bubble.velocity.y * BUBBLE_VELOCITY_SCALE,
         });
         this.bodyMap.set(bubble.id, body);
+        this.reverseBodyMap.set(body, bubble.id);
         World.add(this.engine.world, body);
     }
 
@@ -138,6 +156,7 @@ export default class BubbleCanvas {
         if (!body) return;
         World.remove(this.engine.world, body);
         this.bodyMap.delete(id);
+        this.reverseBodyMap.delete(body);
     }
 
     resizeBubble(id: number, newRadius: number) {
@@ -158,6 +177,8 @@ export default class BubbleCanvas {
             Body.setVelocity(newBody, vel);
         }
         this.bodyMap.set(id, newBody);
+        this.reverseBodyMap.delete(body);
+        this.reverseBodyMap.set(newBody, id);
         World.add(this.engine.world, newBody);
     }
 

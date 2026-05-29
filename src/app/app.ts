@@ -73,6 +73,9 @@ export default class App {
             onMarqueeEnd: (ids, additive) => this.applyMarqueeSelection(ids, additive),
             onEmptyClick: () => this.setState({ selectedBubbleIds: [] }),
             onEmptyContextMenu: (point) => this.openEmptyContextMenu(point),
+            // 버블을 팔레트 위로 드래그할 때 드롭 존을 표시하고, 드롭 시 색상을 저장한다.
+            onBubbleDragStart: () => this.palette.setDropZoneVisible(true),
+            onBubbleDragEnd: (id, x, y) => this.handleBubbleDragEnd(id, x, y),
         });
 
         this.palette = new Palette({
@@ -391,6 +394,24 @@ export default class App {
                 return { ...p, colors: [...p.colors, ...moved] };
             });
         this.setState({ palette: { ...this.state.palette, presets }, selectedColorIds: [] });
+    }
+
+    // 버블을 팔레트 위에 드롭: 색상을 활성 프리셋에 저장하고 버블을 캔버스에서 제거한다.
+    private handleBubbleDragEnd(id: number, x: number, y: number) {
+        this.palette.setDropZoneVisible(false);
+
+        const paletteWidth = this.palette.getOccupiedWidth();
+        const overPalette = paletteWidth > 0 && x >= window.innerWidth - paletteWidth;
+        if (!overPalette) return;
+
+        const bubble = this.state.bubbles.find(b => b.id === id);
+        if (!bubble) return;
+
+        this.addColorToActivePreset(bubble.color);
+        this.setState({
+            bubbles: this.state.bubbles.filter(b => b.id !== id),
+            selectedBubbleIds: this.state.selectedBubbleIds.filter(sid => sid !== id),
+        });
     }
 
     // 그룹 드래그로 사이드바 밖에 드롭. 각 색을 드롭 좌표 주변에 살짝 흩어 스폰한다.
