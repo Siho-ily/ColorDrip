@@ -11,6 +11,9 @@ import {
     DROP_LIGHTNESS,
     CLEANUP_INTERVAL,
     OFFSCREEN_MARGIN,
+    DROP_SPEED_FACTOR,
+    DROP_SPEED_NOISE,
+    DROP_DIRECTION_NOISE,
 } from '@/data/constants';
 
 const { Engine, Render, Runner, Composite, World, Events } = Matter;
@@ -192,12 +195,12 @@ export default class RainCanvas {
         const prev = this.state;
         this.state = { ...this.state, ...nextState };
 
-        // 바람이 바뀌면 기존 drops의 x 속도를 즉시 교체 — rotation은 매 프레임 velocity에서 읽으므로 자동 반영
+        // 바람이 바뀌면 기존 drops의 x 속도를 즉시 교체 — 개별 noiseX·vy는 유지
         const prevWind = prev.settings.rain.wind;
         const newWind = this.state.settings.rain.wind;
         if (prevWind !== newWind) {
             this.drops.forEach(drop => {
-                Matter.Body.setVelocity(drop.body, { x: newWind, y: drop.body.velocity.y });
+                Matter.Body.setVelocity(drop.body, { x: newWind + drop.noiseX, y: drop.vy });
             });
         }
 
@@ -217,21 +220,31 @@ export default class RainCanvas {
         const interval = Math.round(DENSITY_INTERVAL_BASE / this.state.settings.rain.density);
 
         this.rainInterval = setInterval(() => {
-            // resize 대응: 매 틱마다 현재 캔버스 너비를 읽음
+            // resize 대응: 매 틱마다 현재 캔버스 크기를 읽음
             const width = this.render.canvas.width;
+            const height = this.render.canvas.height;
             const radius = radiusFromSize(this.state.settings.rain.size);
-            // 사선으로 떨어지므로 왼쪽 바깥에서도 시작할 수 있게 범위 확장
-            const x = -radius + Math.random() * (width + radius * 2);
+            const windX = this.state.settings.rain.wind;
 
-            const drop = new RainDrop({
-                x,
-                y: -radius * 2,     // 캔버스 위쪽 바깥에서 시작
-                radius,
-                color: randomHsl(),
-                gravityScale: this.state.settings.rain.speed / 10,
-                windX: this.state.settings.rain.wind,
-            });
+            // 기저 속도 계산 + 방울마다 노이즈 적용
+            const baseSpeedY = this.state.settings.rain.speed * DROP_SPEED_FACTOR;
+            const noiseX = (Math.random() * 2 - 1) * DROP_DIRECTION_NOISE;
+            const vy = baseSpeedY * (1 + (Math.random() * 2 - 1) * DROP_SPEED_NOISE);
+            const vx = windX + noiseX;
 
+            // 생성 위치: |windX| / (|windX| + baseSpeedY) 확률로 바람 불어오는 쪽 가장자리, 나머지는 위쪽
+            const absWind = Math.abs(windX);
+            const sideProbability = absWind / (absWind + baseSpeedY);
+            let x: number, y: number;
+            if (windX !== 0 && Math.random() < sideProbability) {
+                x = windX > 0 ? -radius : width + radius;
+                y = Math.random() * height;
+            } else {
+                x = -radius + Math.random() * (width + radius * 2);
+                y = -radius * 2;
+            }
+
+            const drop = new RainDrop({ x, y, radius, color: randomHsl(), vx, vy, noiseX });
             this.drops.set(drop.body.id, drop);
             World.add(this.engine.world, drop.body);
         }, interval);

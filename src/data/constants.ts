@@ -1,7 +1,14 @@
 // ─── RainCanvas ───────────────────────────────────────────────────────────────
 
-/** Matter.js 엔진 기본 중력. scale은 Matter.js 내부 단위 */
-export const GRAVITY = { x: 0, y: 1, scale: 0.0005 };
+/** Matter.js 엔진 중력. 빗방울은 중력 대신 초기 속도로 등속 낙하하므로 y=0으로 비활성화 */
+export const GRAVITY = { x: 0, y: 0, scale: 0.001 };
+
+/** 속도 설정값(1–20) → 빗방울 낙하 속도(px/step) 변환 계수 */
+export const DROP_SPEED_FACTOR = 0.4;
+/** 빗방울 y 속도 노이즈 배율. ±이 비율만큼 방울마다 낙하 속도가 달라짐 */
+export const DROP_SPEED_NOISE = 0.25;
+/** 빗방울 x 방향 노이즈 (px/step). 방울마다 ±이 값이 수평 속도에 더해짐 */
+export const DROP_DIRECTION_NOISE = 0.8;
 
 /** 방울 클릭 히트 영역 여유 (px). 중심 거리 기반 판정에 더해 체감 클릭률을 높임 */
 export const TOLERANCE = 15;

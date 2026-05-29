@@ -57,35 +57,41 @@ export function rotationFromVelocity(vx: number, vy: number): number {
 export default class RainDrop {
     readonly body: Matter.Body;     // Matter.js 물리 body — RainCanvas가 world에 추가
     readonly color: HslColor;       // 빗방울 색상 — catch 시 Bubble로 전달됨
+    /** x 방향 노이즈 성분. 바람 변경 시 개별 편차를 유지하기 위해 저장 */
+    readonly noiseX: number;
+    /** 생성 시 고정된 y 속도. 바람 변경 시 감쇠된 velocity.y 대신 이 값을 사용 */
+    readonly vy: number;
 
     constructor({
         x,
         y,
         radius,
         color,
-        gravityScale,   // speed 설정값 기반. 높을수록 빠르게 낙하
-        windX,          // 수평 초기 속도. 사선 낙하 효과
+        vx,     // 수평 초기 속도 (windX + noiseX)
+        vy,     // 수직 초기 속도. 중력 대신 이 값으로 등속 낙하
+        noiseX, // x 노이즈 성분. 바람 변경 시 재사용
     }: {
         x: number;
         y: number;
         radius: number;
         color: HslColor;
-        gravityScale: number;
-        windX: number;
+        vx: number;
+        vy: number;
+        noiseX: number;
     }) {
         this.color = color;
+        this.noiseX = noiseX;
+        this.vy = vy;
 
         this.body = Matter.Bodies.circle(x, y, radius, {
             restitution: DROP_RESTITUTION,
+            frictionAir: 0,  // 공기 저항 제거 — 속도 감쇠 없이 등속 유지
             // afterRender에서 직접 그리므로 Matter.js 기본 렌더는 투명하게
             render: { fillStyle: 'transparent', strokeStyle: 'transparent', lineWidth: 0 },
         });
 
-        // gravityScale은 IBodyDefinition 타입에 없으므로 생성 후 직접 할당
-        (this.body as Matter.Body & { gravityScale: number }).gravityScale = gravityScale;
-
-        // 수평 속도만 부여 — 수직은 중력이 담당
-        Matter.Body.setVelocity(this.body, { x: windX, y: 0 });
+        // 중력 없음(GRAVITY.y=0) + frictionAir=0 → 초기 속도가 변하지 않고 등속 낙하
+        Matter.Body.setVelocity(this.body, { x: vx, y: vy });
     }
 
     /** 물리 body의 실제 반지름. Matter.js 내부 프로퍼티를 타입 캐스팅으로 읽음 */
