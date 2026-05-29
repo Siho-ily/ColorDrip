@@ -5,12 +5,13 @@ export const GRAVITY = { x: 0, y: 0, scale: 0.001 };
 
 /** 속도 설정값(1–20) → 빗방울 낙하 속도(px/step) 변환 계수 */
 export const DROP_SPEED_FACTOR = 0.4;
-/** 기울기·측면 스폰 비율 계산용 기준 y속도. speed 설정과 무관하게 고정 (speed=10 기준) */
-export const DROP_CANONICAL_VY = DROP_SPEED_FACTOR * 10; // = 4
+/** 바람 설정값(-10–10) → 낙하 lean 비율(vx/vy)로 변환하는 스케일.
+ *  ratio = wind / WIND_SCALE 가 기울기의 tan값이 된다. wind=2.5 → ~27°, wind=10 → ~63° */
+export const WIND_SCALE = 5;
 /** 빗방울 y 속도 노이즈 배율. ±이 비율만큼 방울마다 낙하 속도가 달라짐 */
 export const DROP_SPEED_NOISE = 0.25;
-/** 빗방울 x 방향 노이즈 (px/step). 방울마다 ±이 값이 수평 속도에 더해짐 */
-export const DROP_DIRECTION_NOISE = 0.8;
+/** 빗방울 lean 비율 노이즈. 방울마다 ±이 값이 lean 비율(vx/vy)에 더해져 기울기가 약간씩 달라짐 */
+export const DROP_LEAN_NOISE = 0.15;
 
 /** 방울 클릭 히트 영역 여유 (px). 중심 거리 기반 판정에 더해 체감 클릭률을 높임 */
 export const TOLERANCE = 15;

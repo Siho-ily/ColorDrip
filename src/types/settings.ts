@@ -2,7 +2,7 @@ export interface RainSettings {
     speed: number;      // 방울 낙하 속도 (1–20)
     density: number;    // 방울 생성 빈도 (1–20)
     size: number;       // 방울 크기 (1–20)
-    wind: number;       // 바람 수평 속도 (px/frame). 양수 = 오른쪽, 음수 = 왼쪽
+    wind: number;       // 낙하 각도(좌/우 기울기). 양수 = 오른쪽으로 기울며 낙하, 음수 = 왼쪽
 }
 
 export interface BubbleSettings {

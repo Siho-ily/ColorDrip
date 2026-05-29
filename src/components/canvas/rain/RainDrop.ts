@@ -1,6 +1,6 @@
 import Matter from 'matter-js';
 import type { HslColor } from '@/types/bubble';
-import { DROP_RESTITUTION, DROP_CANONICAL_VY } from '@/data/constants';
+import { DROP_RESTITUTION } from '@/data/constants';
 
 function hslToCss({ h, s, l }: HslColor) {
     return `hsl(${h}, ${s}%, ${l}%)`;
@@ -57,8 +57,8 @@ export function rotationFromVelocity(vx: number, vy: number): number {
 export default class RainDrop {
     readonly body: Matter.Body;     // Matter.js 물리 body — RainCanvas가 world에 추가
     readonly color: HslColor;       // 빗방울 색상 — catch 시 Bubble로 전달됨
-    /** x 방향 노이즈 성분. 바람 변경 시 개별 편차를 유지하기 위해 저장 */
-    readonly noiseX: number;
+    /** lean 비율(vx/vy) 노이즈 성분. 바람 변경 시 개별 편차를 유지하기 위해 저장 */
+    readonly noiseRatio: number;
     /** 생성 시 고정된 y 속도. 바람 변경 시 감쇠된 velocity.y 대신 이 값을 사용 */
     readonly vy: number;
 
@@ -67,9 +67,9 @@ export default class RainDrop {
         y,
         radius,
         color,
-        vx,     // 수평 초기 속도 (windX + noiseX)
-        vy,     // 수직 초기 속도. 중력 대신 이 값으로 등속 낙하
-        noiseX, // x 노이즈 성분. 바람 변경 시 재사용
+        vx,         // 수평 초기 속도 (vy * (ratio + noiseRatio))
+        vy,         // 수직 초기 속도. 중력 대신 이 값으로 등속 낙하
+        noiseRatio, // lean 비율 노이즈 성분. 바람 변경 시 재사용
     }: {
         x: number;
         y: number;
@@ -77,15 +77,17 @@ export default class RainDrop {
         color: HslColor;
         vx: number;
         vy: number;
-        noiseX: number;
+        noiseRatio: number;
     }) {
         this.color = color;
-        this.noiseX = noiseX;
+        this.noiseRatio = noiseRatio;
         this.vy = vy;
 
         this.body = Matter.Bodies.circle(x, y, radius, {
             restitution: DROP_RESTITUTION,
             frictionAir: 0,  // 공기 저항 제거 — 속도 감쇠 없이 등속 유지
+            // 같은 음수 group끼리는 절대 충돌하지 않음 — 빗방울끼리 서로 통과시킨다
+            collisionFilter: { group: -1 },
             // afterRender에서 직접 그리므로 Matter.js 기본 렌더는 투명하게
             render: { fillStyle: 'transparent', strokeStyle: 'transparent', lineWidth: 0 },
         });
@@ -101,15 +103,15 @@ export default class RainDrop {
 
     /** RainCanvas의 afterRender 이벤트에서 매 프레임 호출된다 */
     draw(ctx: CanvasRenderingContext2D) {
-        // 기울기는 x속도(바람)와 기준 y속도로만 계산 — 실제 낙하 속도(speed 설정)에 독립적
-        const vx = this.body.velocity.x;
+        // 기울기는 실제 이동 벡터로 계산 — 방향(각도)은 wind로만 결정되어 speed와 무관하므로
+        // 실제 velocity를 그대로 써도 speed가 기울기를 바꾸지 않는다
         drawTeardrop(
             ctx,
             this.body.position.x,
             this.body.position.y,
             this.radius,
             this.color,
-            rotationFromVelocity(vx, DROP_CANONICAL_VY),
+            rotationFromVelocity(this.body.velocity.x, this.body.velocity.y),
         );
     }
 }
