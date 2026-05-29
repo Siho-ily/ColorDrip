@@ -150,6 +150,28 @@ export default class BubbleLayer {
         return `-${Math.max(5, Math.round(radius * 0.32))}px`;
     }
 
+    /**
+     * 드래그 중인 버블 div를 document.body로 이동해 Canvas stacking context(z-10) 밖으로 꺼낸다.
+     * position: fixed + 기존 translate 좌표를 그대로 쓰면 시각적 위치가 동일하다.
+     * (Canvas $el이 inset-0으로 뷰포트를 꽉 채우므로 좌표 변환 불필요)
+     */
+    liftBubble(id: number) {
+        const entry = this.bubbleMap.get(id);
+        if (!entry) return;
+        entry.$el.style.position = 'fixed';
+        entry.$el.style.zIndex = '35';
+        document.body.appendChild(entry.$el);
+    }
+
+    /** liftBubble 이후 버블 div를 BubbleLayer 컨테이너로 돌려놓는다. */
+    landBubble(id: number) {
+        const entry = this.bubbleMap.get(id);
+        if (!entry) return;
+        entry.$el.style.position = '';
+        entry.$el.style.zIndex = '';
+        this.$el.appendChild(entry.$el);
+    }
+
     /** marquee 교차 판정용 — id → viewport 기준 DOMRect */
     getBubbleRects(): Map<number, DOMRect> {
         const result = new Map<number, DOMRect>();

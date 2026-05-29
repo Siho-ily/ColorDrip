@@ -65,14 +65,14 @@ export default class Canvas {
         this.bubbleCanvas = new BubbleCanvas({
             $target: this.$el,
             onPositionUpdate: (updates) => this.bubbleLayer.syncPositions(updates),
-            // 드래그 중에는 Canvas stacking context(z-10)를 팔레트(z-30) 위로 올려
-            // 버블이 팔레트 사이드바 뒤로 숨지 않도록 한다.
+            // 드래그 중인 버블만 body로 꺼내 Canvas stacking context(z-10) 제약을 벗어나
+            // 팔레트 사이드바(z-30) 위에 보이도록 한다.
             onBubbleDragStart: (id) => {
-                this.$el.style.zIndex = '35';
+                this.bubbleLayer.liftBubble(id);
                 onBubbleDragStart?.(id);
             },
             onBubbleDragEnd: (id, x, y) => {
-                this.$el.style.zIndex = '';
+                this.bubbleLayer.landBubble(id);
                 onBubbleDragEnd?.(id, x, y);
             },
         });
