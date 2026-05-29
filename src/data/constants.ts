@@ -5,6 +5,8 @@ export const GRAVITY = { x: 0, y: 0, scale: 0.001 };
 
 /** 속도 설정값(1–20) → 빗방울 낙하 속도(px/step) 변환 계수 */
 export const DROP_SPEED_FACTOR = 0.4;
+/** 기울기·측면 스폰 비율 계산용 기준 y속도. speed 설정과 무관하게 고정 (speed=10 기준) */
+export const DROP_CANONICAL_VY = DROP_SPEED_FACTOR * 10; // = 4
 /** 빗방울 y 속도 노이즈 배율. ±이 비율만큼 방울마다 낙하 속도가 달라짐 */
 export const DROP_SPEED_NOISE = 0.25;
 /** 빗방울 x 방향 노이즈 (px/step). 방울마다 ±이 값이 수평 속도에 더해짐 */

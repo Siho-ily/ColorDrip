@@ -14,6 +14,7 @@ import {
     DROP_SPEED_FACTOR,
     DROP_SPEED_NOISE,
     DROP_DIRECTION_NOISE,
+    DROP_CANONICAL_VY,
 } from '@/data/constants';
 
 const { Engine, Render, Runner, Composite, World, Events } = Matter;
@@ -232,9 +233,10 @@ export default class RainCanvas {
             const vy = baseSpeedY * (1 + (Math.random() * 2 - 1) * DROP_SPEED_NOISE);
             const vx = windX + noiseX;
 
-            // 생성 위치: |windX| / (|windX| + baseSpeedY) 확률로 바람 불어오는 쪽 가장자리, 나머지는 위쪽
+            // 생성 위치: 기준 y속도 기반 확률로 바람 불어오는 쪽 가장자리 또는 위쪽에서 생성
+            // DROP_CANONICAL_VY 고정값 사용 → speed 설정과 무관하게 바람 세기만으로 비율 결정
             const absWind = Math.abs(windX);
-            const sideProbability = absWind / (absWind + baseSpeedY);
+            const sideProbability = absWind / (absWind + DROP_CANONICAL_VY);
             let x: number, y: number;
             if (windX !== 0 && Math.random() < sideProbability) {
                 x = windX > 0 ? -radius : width + radius;

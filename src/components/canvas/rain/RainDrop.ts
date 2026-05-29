@@ -1,6 +1,6 @@
 import Matter from 'matter-js';
 import type { HslColor } from '@/types/bubble';
-import { DROP_RESTITUTION } from '@/data/constants';
+import { DROP_RESTITUTION, DROP_CANONICAL_VY } from '@/data/constants';
 
 function hslToCss({ h, s, l }: HslColor) {
     return `hsl(${h}, ${s}%, ${l}%)`;
@@ -101,14 +101,15 @@ export default class RainDrop {
 
     /** RainCanvas의 afterRender 이벤트에서 매 프레임 호출된다 */
     draw(ctx: CanvasRenderingContext2D) {
-        const { x: vx, y: vy } = this.body.velocity;
+        // 기울기는 x속도(바람)와 기준 y속도로만 계산 — 실제 낙하 속도(speed 설정)에 독립적
+        const vx = this.body.velocity.x;
         drawTeardrop(
             ctx,
             this.body.position.x,
             this.body.position.y,
             this.radius,
             this.color,
-            rotationFromVelocity(vx, vy),
+            rotationFromVelocity(vx, DROP_CANONICAL_VY),
         );
     }
 }
