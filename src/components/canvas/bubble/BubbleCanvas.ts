@@ -143,6 +143,7 @@ export default class BubbleCanvas {
             friction: 0,
             frictionAir: BUBBLE_FRICTION_AIR,
         });
+        Body.setInertia(body, Infinity); // 충돌 시 회전 방지
         Body.setVelocity(body, {
             x: bubble.velocity.x * BUBBLE_VELOCITY_SCALE,
             y: bubble.velocity.y * BUBBLE_VELOCITY_SCALE,
@@ -173,6 +174,7 @@ export default class BubbleCanvas {
             friction: 0,
             frictionAir: BUBBLE_FRICTION_AIR,
         });
+        Body.setInertia(newBody, Infinity); // 충돌 시 회전 방지
         if (isStatic) {
             Body.setStatic(newBody, true);
         } else {
