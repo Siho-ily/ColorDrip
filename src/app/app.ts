@@ -397,6 +397,7 @@ export default class App {
     }
 
     // 버블을 팔레트 위에 드롭: 색상을 활성 프리셋에 저장하고 버블을 캔버스에서 제거한다.
+    // 드래그한 버블이 다중 선택에 포함돼 있으면 선택 전체를 한 번에 저장/제거한다.
     private handleBubbleDragEnd(id: number, x: number, y: number) {
         this.palette.setDropZoneVisible(false);
 
@@ -404,13 +405,16 @@ export default class App {
         const overPalette = paletteWidth > 0 && x >= window.innerWidth - paletteWidth;
         if (!overPalette) return;
 
-        const bubble = this.state.bubbles.find(b => b.id === id);
-        if (!bubble) return;
+        const selected = this.state.selectedBubbleIds;
+        const ids = selected.length > 1 && selected.includes(id) ? new Set(selected) : new Set([id]);
 
-        this.addColorToActivePreset(bubble.color);
+        const targets = this.state.bubbles.filter(b => ids.has(b.id));
+        if (targets.length === 0) return;
+
+        targets.forEach(b => this.addColorToActivePreset(b.color));
         this.setState({
-            bubbles: this.state.bubbles.filter(b => b.id !== id),
-            selectedBubbleIds: this.state.selectedBubbleIds.filter(sid => sid !== id),
+            bubbles: this.state.bubbles.filter(b => !ids.has(b.id)),
+            selectedBubbleIds: [],
         });
     }
 
