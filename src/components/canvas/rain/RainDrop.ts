@@ -45,10 +45,12 @@ export function drawTeardrop(
     ctx.restore();
 }
 
-/** velocity 벡터로부터 빗방울 회전 각도 계산. vy=0이고 vx=0이면 0 반환 */
+/** velocity 벡터로부터 빗방울 회전 각도 계산. vy=0이고 vx=0이면 0 반환.
+ *  꼬리가 진행 반대 방향(위)을 향하도록 부호를 반전한다:
+ *  오른쪽으로 이동(vx > 0)하면 반시계 회전(-) → 꼬리가 오른쪽 위로 기울어짐. */
 export function rotationFromVelocity(vx: number, vy: number): number {
     if (vx === 0 && vy === 0) return 0;
-    return Math.atan2(vx, vy);
+    return -Math.atan2(vx, vy);
 }
 
 /** Matter.js body 하나와 그 시각 표현을 함께 관리하는 빗방울 단위 컴포넌트 */

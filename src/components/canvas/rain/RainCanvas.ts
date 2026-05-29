@@ -192,6 +192,15 @@ export default class RainCanvas {
         const prev = this.state;
         this.state = { ...this.state, ...nextState };
 
+        // 바람이 바뀌면 기존 drops의 x 속도를 즉시 교체 — rotation은 매 프레임 velocity에서 읽으므로 자동 반영
+        const prevWind = prev.settings.rain.wind;
+        const newWind = this.state.settings.rain.wind;
+        if (prevWind !== newWind) {
+            this.drops.forEach(drop => {
+                Matter.Body.setVelocity(drop.body, { x: newWind, y: drop.body.velocity.y });
+            });
+        }
+
         const densityChanged = prev.settings.rain.density !== this.state.settings.rain.density;
         if (this.state.rainMode && (!prev.rainMode || densityChanged)) {
             this.stopRain();
