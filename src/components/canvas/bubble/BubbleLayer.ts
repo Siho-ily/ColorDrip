@@ -59,12 +59,6 @@ export default class BubbleLayer {
         }
         $outer.appendChild($inner);
 
-        // 드래그가 끝난 mouseup은 click을 발생시키지 않는다 (브라우저 기본).
-        // 짧은 클릭만 선택으로 처리된다.
-        $outer.addEventListener('click', (e) => {
-            this.onBubbleClick(bubble.id, e.shiftKey);
-        });
-
         $outer.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             this.onBubbleContextMenu(bubble.id, $outer.getBoundingClientRect(), { x: e.clientX, y: e.clientY });
@@ -111,6 +105,16 @@ export default class BubbleLayer {
             entry.$inner.style.outlineWidth  = this.pinRingWidth(newRadius);
             entry.$inner.style.outlineOffset = this.pinRingOffset(newRadius);
         }
+    }
+
+    getBubbleAtPoint(x: number, y: number): number | null {
+        for (const [id, entry] of this.bubbleMap) {
+            const rect = entry.$el.getBoundingClientRect();
+            const cx = rect.left + entry.radius;
+            const cy = rect.top + entry.radius;
+            if (Math.hypot(x - cx, y - cy) <= entry.radius) return id;
+        }
+        return null;
     }
 
     syncPositions(updates: { id: number; x: number; y: number }[]) {
