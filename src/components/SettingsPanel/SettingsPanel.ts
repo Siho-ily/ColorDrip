@@ -1,7 +1,8 @@
 import { animate } from 'motion';
-import type { Settings, ColorSpace } from '@/types/settings';
+import type { Settings, ColorSpace, ColorNotation } from '@/types/settings';
+import { el } from '@/lib/dom';
 
-const COLOR_SPACES: { value: ColorSpace; label: string }[] = [
+const COLOR_MIXING_SPACES: { value: ColorSpace; label: string }[] = [
     { value: 'oklch', label: 'OKLCH' },
     { value: 'oklab', label: 'OKLab' },
     { value: 'lch',   label: 'LCH' },
@@ -10,6 +11,13 @@ const COLOR_SPACES: { value: ColorSpace; label: string }[] = [
     { value: 'hsv',   label: 'HSV' },
     { value: 'rgb',   label: 'RGB' },
     { value: 'lrgb',  label: 'Linear RGB' },
+];
+
+const COLOR_NOTATIONS: { value: ColorNotation; label: string }[] = [
+    { value: 'hex',   label: 'HEX' },
+    { value: 'rgb',   label: 'RGB' },
+    { value: 'hsl',   label: 'HSL' },
+    { value: 'oklch', label: 'OKLCH' },
 ];
 
 export default class SettingsPanel {
@@ -128,11 +136,29 @@ export default class SettingsPanel {
         this.appendSlider('바람', this.settings.rain.wind, -10, 10, 0.5, v =>
             this.emit({ rain: { ...this.settings.rain, wind: v } }));
 
-        this.appendSectionLabel('색상 혼합');
-        this.appendColorSpaceSelect();
-        this.appendToggle('Hex 항상 표시', this.settings.showHexAlways, v =>
-            this.emit({ showHexAlways: v }));
+        this.appendSectionLabel('버블');
+        this.appendSlider('크기', this.settings.bubble.size, 1, 20, 1, v =>
+            this.emit({ bubble: { ...this.settings.bubble, size: v } }));
 
+        this.appendSectionLabel('색상');
+        this.appendSelect(
+            '표기 방식',
+            COLOR_NOTATIONS,
+            this.settings.colorNotation,
+            v => this.emit({ colorNotation: v as ColorNotation }),
+        );
+        this.appendSelect(
+            '피커 방식',
+            COLOR_NOTATIONS,
+            this.settings.pickerNotation,
+            v => this.emit({ pickerNotation: v as ColorNotation }),
+        );
+        this.appendSelect(
+            '혼합 방식',
+            COLOR_MIXING_SPACES,
+            this.settings.colorMixing,
+            v => this.emit({ colorMixing: v as ColorSpace }),
+        );
     }
 
     private emit(partial: Partial<Settings>) {
@@ -175,11 +201,16 @@ export default class SettingsPanel {
         this.$el.appendChild(row);
     }
 
-    private appendColorSpaceSelect() {
+    private appendSelect<T extends string>(
+        label: string,
+        options: { value: T; label: string }[],
+        currentValue: T,
+        onChange: (v: T) => void,
+    ) {
         const row = el('div', { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px' });
 
-        const lbl = el('span', { fontSize: '12px', color: 'var(--glass-text)', minWidth: '50px' });
-        lbl.textContent = '방식';
+        const lbl = el('span', { fontSize: '12px', color: 'var(--glass-text)', minWidth: '60px' });
+        lbl.textContent = label;
 
         const select = document.createElement('select');
         Object.assign(select.style, {
@@ -189,63 +220,17 @@ export default class SettingsPanel {
             cursor: 'pointer',
         });
 
-        COLOR_SPACES.forEach(({ value, label }) => {
+        options.forEach(({ value, label }) => {
             const opt = document.createElement('option');
             opt.value = value; opt.textContent = label;
-            opt.selected = value === this.settings.colorSpace;
+            opt.selected = value === currentValue;
             select.appendChild(opt);
         });
 
-        select.addEventListener('change', () => this.emit({ colorSpace: select.value as ColorSpace }));
+        select.addEventListener('change', () => onChange(select.value as T));
 
         row.append(lbl, select);
         this.$el.appendChild(row);
     }
 
-    private appendToggle(label: string, checked: boolean, onChange: (v: boolean) => void) {
-        const row = el('div', { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' });
-
-        const lbl = el('span', { fontSize: '12px', color: 'var(--glass-text)' });
-        lbl.textContent = label;
-
-        row.append(lbl, this.makeToggleSwitch(checked, onChange));
-        this.$el.appendChild(row);
-    }
-
-    private makeToggleSwitch(checked: boolean, onChange: (v: boolean) => void): HTMLElement {
-        const wrap = el('label', { position: 'relative', display: 'inline-block', width: '32px', height: '18px', cursor: 'pointer' });
-
-        const input = document.createElement('input');
-        input.type = 'checkbox'; input.checked = checked;
-        Object.assign(input.style, { opacity: '0', width: '0', height: '0', position: 'absolute' });
-
-        const track = el('span', {
-            position: 'absolute', inset: '0', borderRadius: '18px',
-            background: checked ? 'var(--glass-toggle-on)' : 'var(--glass-toggle-off)',
-            transition: 'background 0.2s',
-        });
-
-        const thumb = el('span', {
-            position: 'absolute', width: '14px', height: '14px', borderRadius: '50%',
-            background: 'white', top: '2px', left: checked ? '16px' : '2px',
-            transition: 'left 0.2s',
-        });
-
-        input.addEventListener('change', () => {
-            const v = input.checked;
-            track.style.background = v ? 'var(--glass-toggle-on)' : 'var(--glass-toggle-off)';
-            thumb.style.left = v ? '16px' : '2px';
-            onChange(v);
-        });
-
-        wrap.append(input, track, thumb);
-        return wrap;
-    }
-
-}
-
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, styles: Partial<CSSStyleDeclaration>): HTMLElementTagNameMap[K] {
-    const node = document.createElement(tag);
-    Object.assign(node.style, styles);
-    return node;
 }

@@ -1,5 +1,6 @@
 import type { Preset } from '@/types/palette';
 import { hslToCss } from '@/lib/color';
+import { createModalShell } from '@/lib/modalShell';
 
 export default class PresetPickerModal {
     private $el: HTMLDivElement;
@@ -7,20 +8,16 @@ export default class PresetPickerModal {
     private onSelect: ((presetId: string) => void) | null = null;
 
     private readonly keyHandler = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') this.close();
+        if (e.key === 'Escape') { e.stopPropagation(); this.close(); }
     };
 
     constructor() {
-        this.$el = document.createElement('div');
-        this.$el.className = [
-            'fixed inset-0 z-[60] flex items-center justify-center hidden',
-            'bg-black/40 backdrop-blur-sm',
-        ].join(' ');
-        document.body.appendChild(this.$el);
-
-        const $card = document.createElement('div');
-        $card.className = 'bg-background border border-border rounded-xl shadow-xl p-4 w-56 flex flex-col gap-3';
-        this.$el.appendChild($card);
+        const { $overlay, $card } = createModalShell({
+            zIndex: 'z-[60]',
+            cardSize: 'p-4 w-56 gap-3',
+            onBackdropClick: () => this.close(),
+        });
+        this.$el = $overlay;
 
         const $header = document.createElement('div');
         $header.className = 'flex items-center justify-between';
@@ -41,10 +38,6 @@ export default class PresetPickerModal {
         this.$list = document.createElement('div');
         this.$list.className = 'flex flex-col gap-1 max-h-64 overflow-y-auto';
         $card.appendChild(this.$list);
-
-        this.$el.addEventListener('click', (e) => {
-            if (e.target === this.$el) this.close();
-        });
     }
 
     open(presets: Preset[], onSelect: (presetId: string) => void) {

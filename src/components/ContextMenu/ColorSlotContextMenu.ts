@@ -2,6 +2,7 @@ import ContextMenu from '@/components/ContextMenu/ContextMenu';
 import type { MenuItemDef } from '@/types/menu';
 import type { HslColor } from '@/types/bubble';
 import type { Preset } from '@/types/palette';
+import { buildCopyColorSubmenu } from '@/lib/color';
 
 export default class ColorSlotContextMenu {
     private menu: ContextMenu;
@@ -49,6 +50,8 @@ export default class ColorSlotContextMenu {
         const otherPresets = this.getPresets().filter(p => p.id !== presetId);
 
         const items: MenuItemDef[] = [
+            buildCopyColorSubmenu(color),
+            { kind: 'separator' },
             {
                 kind: 'action',
                 id: 'edit',

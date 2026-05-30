@@ -35,6 +35,12 @@ const SETTINGS_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="non
   <circle cx="12" cy="12" r="3"/>
 </svg>`;
 
+const HELP_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="10"/>
+  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+  <path d="M12 17h.01"/>
+</svg>`;
+
 export default class MenuBar {
   private $el: HTMLDivElement;
   private $sep1: HTMLDivElement;
@@ -43,6 +49,8 @@ export default class MenuBar {
   private $paletteBtn: HTMLButtonElement;
   private $darkBtn: HTMLButtonElement;
   private $settingsBtn: HTMLButtonElement;
+  private $helpBtn: HTMLButtonElement;
+  private readonly onSettingsToggle: (anchor: HTMLElement) => void;
 
   private edge: SnapEdge = 'top';
   private isDragging = false;
@@ -61,6 +69,7 @@ export default class MenuBar {
     onPaletteToggle,
     onDarkModeToggle,
     onSettingsToggle,
+    onHelpToggle,
     getOccupiedRightWidth,
   }: {
     $target: HTMLElement;
@@ -68,9 +77,11 @@ export default class MenuBar {
     onPaletteToggle: () => void;
     onDarkModeToggle: () => void;
     onSettingsToggle: (anchor: HTMLElement) => void;
+    onHelpToggle: () => void;
     getOccupiedRightWidth: () => number;
   }) {
     this.getOccupiedRightWidth = getOccupiedRightWidth;
+    this.onSettingsToggle = onSettingsToggle;
     this.$el = document.createElement('div');
     Object.assign(this.$el.style, {
       position: 'fixed',
@@ -96,6 +107,7 @@ export default class MenuBar {
     this.$darkBtn = this.createBtn(MOON_ICON, '다크 모드');
     this.$sep2 = this.createSep();
     this.$settingsBtn = this.createBtn(SETTINGS_ICON, '설정');
+    this.$helpBtn = this.createBtn(HELP_ICON, '단축키 도움말');
 
     this.$el.append(
       this.$rainBtn,
@@ -103,7 +115,8 @@ export default class MenuBar {
       this.$paletteBtn,
       this.$darkBtn,
       this.$sep2,
-      this.$settingsBtn
+      this.$settingsBtn,
+      this.$helpBtn
     );
     $target.appendChild(this.$el);
 
@@ -115,6 +128,7 @@ export default class MenuBar {
     this.$settingsBtn.addEventListener('click', () =>
       onSettingsToggle(this.$settingsBtn)
     );
+    this.$helpBtn.addEventListener('click', onHelpToggle);
 
     this.$el.addEventListener('mouseenter', () => this.showBar());
     // mousemove는 마우스를 움직이는 동안 초당 수십 번 발생한다. 250ms 쓰로틀로
@@ -136,6 +150,11 @@ export default class MenuBar {
 
   setSettingsActive(active: boolean) {
     this.setActive(this.$settingsBtn, active);
+  }
+
+  /** 키보드 단축키에서 설정 패널을 토글한다. 패널은 앵커 요소가 필요하므로 설정 버튼을 재사용한다. */
+  toggleSettings() {
+    this.onSettingsToggle(this.$settingsBtn);
   }
 
   private createBtn(icon: string, title: string): HTMLButtonElement {

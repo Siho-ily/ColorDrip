@@ -105,7 +105,11 @@ export default class ContextMenu {
 
             const $item = document.createElement('div');
             const isDanger = item.kind === 'action' && item.danger;
-            $item.className = `${ITEM_CLASS} ${isDanger ? 'text-destructive hover:bg-destructive/10' : 'text-[var(--cm-fg)] hover:bg-[var(--cm-hover)]'}`;
+            const isDisabled = item.kind === 'action' && item.disabled;
+            const baseColor = isDanger ? 'text-destructive' : 'text-[var(--cm-fg)]';
+            const hover = isDisabled ? '' : (isDanger ? 'hover:bg-destructive/10' : 'hover:bg-[var(--cm-hover)]');
+            const dim = isDisabled ? 'opacity-40 cursor-not-allowed' : '';
+            $item.className = `${ITEM_CLASS} ${baseColor} ${hover} ${dim}`;
 
             const $label = document.createElement('span');
             $label.textContent = item.label;
@@ -137,10 +141,12 @@ export default class ContextMenu {
                     // inSubmenu(서브메뉴 안의 아이템)에서는 닫으면 안 된다.
                     if (!inSubmenu) this.closeSubmenu();
                 });
-                $item.addEventListener('click', () => {
-                    item.onSelect();
-                    this.hide();
-                });
+                if (!isDisabled) {
+                    $item.addEventListener('click', () => {
+                        item.onSelect();
+                        this.hide();
+                    });
+                }
             }
 
             $container.appendChild($item);

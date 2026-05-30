@@ -291,6 +291,7 @@ export default class PaletteTabBar {
         };
 
         $el.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
             reordering = false;
             scrollDragging = false;
             const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-preset-id]');

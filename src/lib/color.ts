@@ -1,7 +1,8 @@
 import chroma from 'chroma-js';
 import type { HslColor } from '@/types/bubble';
-import type { ColorSpace } from '@/types/settings';
+import type { ColorSpace, ColorNotation } from '@/types/settings';
 import type { PresetColor } from '@/types/palette';
+import type { MenuItemDef } from '@/types/menu';
 
 /** mixColors에 넘기는 색상 항목. weight가 클수록 혼합 결과에서 해당 색이 차지하는 비중이 커진다. 생략하면 1. */
 export interface ColorEntry {
@@ -26,7 +27,7 @@ function hslToChroma(c: HslColor) {
  *                   weight는 비율이므로 합이 1일 필요 없음 — 내부에서 정규화한다.
  *                   예) [{color: red, weight: 2}, {color: blue, weight: 1}]
  *                       → red가 2/3, blue가 1/3 비중으로 혼합
- * @param colorSpace 혼합에 사용할 색 공간 — settings.colorSpace 값을 그대로 넘긴다.
+ * @param colorSpace 혼합에 사용할 색 공간 — settings.colorMixing 값을 그대로 넘긴다.
  * @returns          혼합 결과를 HslColor로 반환.
  *
  * 결과를 HslColor로 돌려주는 이유:
@@ -54,6 +55,56 @@ export function hslToCss(hsl: HslColor): string {
     return `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
 }
 
+/**
+ * HslColor를 사용자 표기 방식 문자열로 변환한다.
+ * Context Menu, hover tooltip, 컬러피커 등 모든 UI에서 일관된 문자열을 생성한다.
+ */
+export function formatColor(color: HslColor, notation: ColorNotation): string {
+    const c = chroma.hsl(color.h, color.s / 100, color.l / 100);
+    switch (notation) {
+        case 'hex': {
+            return c.hex();
+        }
+        case 'rgb': {
+            const [r, g, b] = c.rgb().map(Math.round);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        case 'hsl': {
+            const [h, s, l] = c.hsl();
+            return `hsl(${Math.round(h || 0)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`;
+        }
+        case 'oklch': {
+            const [ol, oc, oh] = c.oklch();
+            return `oklch(${(ol * 100).toFixed(1)}% ${oc.toFixed(3)} ${(oh ?? 0).toFixed(1)})`;
+        }
+    }
+}
+
 export function createPresetColor(color: HslColor): PresetColor {
     return { id: crypto.randomUUID(), color, label: null };
+}
+
+/**
+ * "색상 복사" 컨텍스트 메뉴 서브메뉴를 만든다.
+ *
+ * HEX/RGB/HSL/oklch 각 표기를 hint로 보여주고, 클릭하면 그 문자열을 클립보드에 복사한다.
+ * 버블 메뉴와 색상 슬롯 메뉴가 똑같이 쓰던 블록이라 한 곳으로 모았다.
+ */
+export function buildCopyColorSubmenu(color: HslColor): MenuItemDef {
+    const hex      = formatColor(color, 'hex');
+    const rgbStr   = formatColor(color, 'rgb');
+    const hslStr   = formatColor(color, 'hsl');
+    const oklchStr = formatColor(color, 'oklch');
+
+    return {
+        kind: 'submenu',
+        id: 'copy',
+        label: '색상 복사',
+        items: [
+            { kind: 'action', id: 'copy-hex',   label: 'HEX',   hint: hex,      onSelect: () => navigator.clipboard.writeText(hex) },
+            { kind: 'action', id: 'copy-rgb',   label: 'RGB',   hint: rgbStr,   onSelect: () => navigator.clipboard.writeText(rgbStr) },
+            { kind: 'action', id: 'copy-hsl',   label: 'HSL',   hint: hslStr,   onSelect: () => navigator.clipboard.writeText(hslStr) },
+            { kind: 'action', id: 'copy-oklch', label: 'oklch', hint: oklchStr, onSelect: () => navigator.clipboard.writeText(oklchStr) },
+        ],
+    };
 }

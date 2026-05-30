@@ -2,6 +2,7 @@
  * 팔레트 색상 슬롯 드래그 관리.
  *
  * PaletteSidebar가 소유하고, PaletteSlotPanel이 pointerdown 감지 후 start()를 호출한다.
+ * 선택된 슬롯을 드래그하면 선택 전체(colorIds)가 그룹으로 함께 이동한다.
  *
  * drop zone 세 가지:
  *   reorder  — 슬롯 패널 안: 순서 변경
@@ -13,25 +14,30 @@ export default class PaletteColorDrag {
     private $dangerZone: HTMLDivElement;
     private $indicator: HTMLDivElement;
 
-    private dragging: { presetId: string; colorId: string; $slot: HTMLElement } | null = null;
+    private dragging: { presetId: string; colorIds: string[]; $slots: HTMLElement[] } | null = null;
     private highlightedTab: HTMLElement | null = null;
     private dropType: 'reorder' | 'preset' | 'canvas' | null = null;
     private insertIndex = 0;
+    private lastDropX = 0;
+    private lastDropY = 0;
 
     constructor(
         private readonly getSidebarEl: () => HTMLElement,
         private readonly getTabEls: () => HTMLElement[],
         private readonly getSlotEls: () => HTMLElement[],
         private readonly onReorder: (presetId: string, newColorIds: string[]) => void,
-        private readonly onMoveToPreset: (fromPresetId: string, colorId: string, toPresetId: string) => void,
-        private readonly onDropToCanvas: (presetId: string, colorId: string) => void,
+        private readonly onMoveToPreset: (fromPresetId: string, colorIds: string[], toPresetId: string) => void,
+        private readonly onDropToCanvas: (presetId: string, colorIds: string[], x: number, y: number) => void,
     ) {
         this.$dangerZone = this.createDangerZone();
         this.$indicator = this.createIndicator();
     }
 
-    start(presetId: string, colorId: string, cssColor: string, $slot: HTMLElement, e: PointerEvent) {
-        this.dragging = { presetId, colorId, $slot };
+    start(presetId: string, colorIds: string[], cssColor: string, $slot: HTMLElement, e: PointerEvent) {
+        // 그룹에 속한 모든 슬롯 DOM을 모아 dim 처리한다 (드래그한 슬롯 하나만이 아니라).
+        const idSet = new Set(colorIds);
+        const $slots = this.getSlotEls().filter(el => idSet.has(el.dataset.colorId ?? ''));
+        this.dragging = { presetId, colorIds, $slots };
 
         this.$ghost = document.createElement('div');
         Object.assign(this.$ghost.style, {
@@ -47,10 +53,37 @@ export default class PaletteColorDrag {
             left: `${e.clientX}px`,
             top: `${e.clientY}px`,
         });
+
+        // 여러 개를 옮길 때는 개수 배지를 ghost에 붙인다.
+        if (colorIds.length > 1) {
+            const $badge = document.createElement('div');
+            Object.assign($badge.style, {
+                position: 'absolute',
+                top: '-6px',
+                right: '-6px',
+                minWidth: '18px',
+                height: '18px',
+                padding: '0 4px',
+                borderRadius: '9999px',
+                background: 'hsl(var(--primary))',
+                color: 'hsl(var(--primary-foreground))',
+                fontSize: '11px',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 0 2px rgba(255,255,255,0.7)',
+            });
+            $badge.textContent = String(colorIds.length);
+            this.$ghost.appendChild($badge);
+        }
+
         document.body.appendChild(this.$ghost);
 
-        $slot.style.opacity = '0.3';
-        $slot.style.pointerEvents = 'none';
+        $slots.forEach(s => {
+            s.style.opacity = '0.3';
+            s.style.pointerEvents = 'none';
+        });
 
         document.addEventListener('pointermove', this.onMove);
         document.addEventListener('pointerup', this.onUp);
@@ -61,6 +94,8 @@ export default class PaletteColorDrag {
 
     private readonly onMove = (e: PointerEvent) => {
         if (!this.$ghost) return;
+        this.lastDropX = e.clientX;
+        this.lastDropY = e.clientY;
         this.$ghost.style.left = `${e.clientX}px`;
         this.$ghost.style.top = `${e.clientY}px`;
         this.update(e.clientX, e.clientY);
@@ -68,20 +103,25 @@ export default class PaletteColorDrag {
 
     private readonly onUp = () => {
         if (!this.dragging) return;
-        const { presetId, colorId } = this.dragging;
+        const { presetId, colorIds } = this.dragging;
 
-        if (this.dropType === 'reorder') {
-            const allIds = this.getSlotEls().map(el => el.dataset.colorId!);
-            const newIds = allIds.filter(id => id !== colorId);
-            newIds.splice(this.insertIndex, 0, colorId);
-            this.onReorder(presetId, newIds);
-        } else if (this.dropType === 'preset' && this.highlightedTab) {
-            this.onMoveToPreset(presetId, colorId, this.highlightedTab.dataset.presetId!);
-        } else if (this.dropType === 'canvas') {
-            this.onDropToCanvas(presetId, colorId);
+        try {
+            if (this.dropType === 'reorder') {
+                const idSet = new Set(colorIds);
+                const allIds = this.getSlotEls().map(el => el.dataset.colorId!);
+                const remaining = allIds.filter(id => !idSet.has(id));
+                // 그룹은 현재 패널 순서를 유지한 채 insertIndex 위치에 통째로 삽입한다.
+                const group = allIds.filter(id => idSet.has(id));
+                remaining.splice(this.insertIndex, 0, ...group);
+                this.onReorder(presetId, remaining);
+            } else if (this.dropType === 'preset' && this.highlightedTab) {
+                this.onMoveToPreset(presetId, colorIds, this.highlightedTab.dataset.presetId!);
+            } else if (this.dropType === 'canvas') {
+                this.onDropToCanvas(presetId, colorIds, this.lastDropX, this.lastDropY);
+            }
+        } finally {
+            this.cleanup();
         }
-
-        this.cleanup();
     };
 
     private readonly onKeyDown = (e: KeyboardEvent) => {
@@ -90,7 +130,8 @@ export default class PaletteColorDrag {
 
     private update(x: number, y: number) {
         if (!this.dragging) return;
-        const { presetId, colorId } = this.dragging;
+        const { presetId, colorIds } = this.dragging;
+        const dragIds = new Set(colorIds);
         const sb = this.getSidebarEl().getBoundingClientRect();
 
         if (x < sb.left || x > sb.right || y < sb.top || y > sb.bottom) {
@@ -120,12 +161,12 @@ export default class PaletteColorDrag {
         this.dropType = 'reorder';
 
         const slots = this.getSlotEls();
-        this.insertIndex = this.calcInsertIndex(slots, x, y, colorId);
-        this.updateIndicator(slots, this.insertIndex, colorId);
+        this.insertIndex = this.calcInsertIndex(slots, x, y, dragIds);
+        this.updateIndicator(slots, this.insertIndex, dragIds);
     }
 
-    private calcInsertIndex(slots: HTMLElement[], x: number, y: number, dragId: string): number {
-        const visible = slots.filter(s => s.dataset.colorId !== dragId);
+    private calcInsertIndex(slots: HTMLElement[], x: number, y: number, dragIds: Set<string>): number {
+        const visible = slots.filter(s => !dragIds.has(s.dataset.colorId ?? ''));
         if (!visible.length) return 0;
 
         let best = visible.length;
@@ -140,8 +181,8 @@ export default class PaletteColorDrag {
         return best;
     }
 
-    private updateIndicator(slots: HTMLElement[], index: number, dragId: string) {
-        const visible = slots.filter(s => s.dataset.colorId !== dragId);
+    private updateIndicator(slots: HTMLElement[], index: number, dragIds: Set<string>) {
+        const visible = slots.filter(s => !dragIds.has(s.dataset.colorId ?? ''));
         if (!visible.length) { this.hideIndicator(); return; }
 
         const n = visible.length;
@@ -199,8 +240,10 @@ export default class PaletteColorDrag {
         this.$ghost = null;
 
         if (this.dragging) {
-            this.dragging.$slot.style.opacity = '';
-            this.dragging.$slot.style.pointerEvents = '';
+            this.dragging.$slots.forEach(s => {
+                s.style.opacity = '';
+                s.style.pointerEvents = '';
+            });
             this.dragging = null;
         }
 
@@ -224,18 +267,17 @@ export default class PaletteColorDrag {
             display: 'none',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(to right, rgba(239,68,68,0.12), rgba(239,68,68,0.02))',
-            borderRight: '2px dashed rgba(239,68,68,0.4)',
+            background: 'linear-gradient(to right, rgba(99,102,241,0.10), rgba(99,102,241,0.02))',
+            borderRight: '2px dashed rgba(99,102,241,0.35)',
         });
         $el.innerHTML = `
-            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(239,68,68,0.75);user-select:none">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(99,102,241,0.8);user-select:none">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14H6L5 6"></path>
-                    <path d="M10 11v6M14 11v6"></path>
-                    <path d="M9 6V4h6v2"></path>
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
-                <span style="font-size:0.75rem;font-weight:600;letter-spacing:0.01em">팔레트에서 제거</span>
+                <span style="font-size:0.75rem;font-weight:600;letter-spacing:0.01em">캔버스에 추가</span>
             </div>
         `;
         document.body.appendChild($el);
