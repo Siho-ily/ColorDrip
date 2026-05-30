@@ -1,0 +1,33 @@
+name: AutoPR
+on:
+    push:
+        branches-ignore:
+            - "main"
+            - "dev"
+jobs:
+    auto-pr:
+        permissions:
+            pull-requests: write
+        runs-on: ubuntu-latest
+        steps:
+            - name: Create PR to dev
+              env:
+                  GH_TOKEN: ${{ secrets.GH_PAT }}
+              run: |
+                  EXISTING=$(gh pr list \
+                    --repo "${{ github.repository }}" \
+                    --head "${{ github.ref_name }}" \
+                    --base dev \
+                    --state open \
+                    --json number \
+                    --jq 'length')
+                  if [ "$EXISTING" = "0" ]; then
+                    gh pr create \
+                      --repo "${{ github.repository }}" \
+                      --head "${{ github.ref_name }}" \
+                      --base dev \
+                      --title "${{ github.ref_name }}" \
+                      --body "Auto-generated PR from branch \`${{ github.ref_name }}\`"
+                  else
+                    echo "PR already exists, skipping."
+                  fi

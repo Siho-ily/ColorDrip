@@ -1,0 +1,255 @@
+/* reset을 named layer로 가져와 utilities보다 낮은 우선순위로 만든다 */
+@import "./reset.css" layer(reset);
+@layer reset, theme, base, components, utilities;
+
+/* tailwindcss */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+/* 폰트 */
+@font-face {
+    font-family: 'TMoneyDungunbaram';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-07@1.0/TmoneyRoundWindRegular.woff') format('woff');
+    font-weight: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'TMoneyDungunbaram';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-07@1.0/TmoneyRoundWindExtraBold.woff') format('woff');
+    font-weight: 800;
+    font-display: swap;
+}
+
+html,
+body,
+#App {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#App {
+    position: relative;
+}
+
+body {
+    font-family: 'TMoneyDungunbaram';
+}
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Inter Variable', sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+
+    /* Context Menu */
+    --cm-bg: oklch(1 0 0);
+    --cm-fg: oklch(0.20 0.06 240);
+    --cm-border: oklch(0.70 0.08 224);
+    --cm-hover: oklch(0.87 0.07 220);
+    --cm-muted: oklch(0.55 0.04 224);
+
+    /* Glass UI (MenuBar, SettingsPanel) */
+    --glass-bg: rgba(255, 255, 255, 0.62);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-shadow: 0 4px 24px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
+    --glass-text: rgba(30, 30, 30, 0.78);
+    --glass-text-dim: rgba(30, 30, 30, 0.48);
+    --glass-text-label: rgba(30, 30, 30, 0.38);
+    --glass-sep: rgba(0, 0, 0, 0.12);
+    --glass-hover: rgba(0, 0, 0, 0.07);
+    --glass-active: rgba(0, 0, 0, 0.10);
+    --glass-toggle-on: rgba(30, 30, 30, 0.72);
+    --glass-toggle-off: rgba(0, 0, 0, 0.16);
+    --glass-select-bg: rgba(255, 255, 255, 0.9);
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+
+    /* Context Menu */
+    --cm-bg: oklch(0.20 0.04 240);
+    --cm-fg: oklch(0.92 0.03 220);
+    --cm-border: oklch(1 0 0 / 10%);
+    --cm-hover: oklch(1 0 0 / 8%);
+    --cm-muted: oklch(0.65 0.04 225);
+
+    /* Glass UI (MenuBar, SettingsPanel) */
+    --glass-bg: rgba(28, 28, 38, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.10);
+    --glass-shadow: 0 4px 24px rgba(0,0,0,0.32), 0 1px 2px rgba(0,0,0,0.16);
+    --glass-text: rgba(220, 220, 235, 0.88);
+    --glass-text-dim: rgba(190, 190, 210, 0.55);
+    --glass-text-label: rgba(170, 170, 195, 0.45);
+    --glass-sep: rgba(255, 255, 255, 0.10);
+    --glass-hover: rgba(255, 255, 255, 0.08);
+    --glass-active: rgba(255, 255, 255, 0.14);
+    --glass-toggle-on: rgba(200, 200, 220, 0.82);
+    --glass-toggle-off: rgba(255, 255, 255, 0.18);
+    --glass-select-bg: rgba(40, 40, 55, 0.9);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+
+    html {
+        @apply font-sans;
+    }
+}
+
+@utility scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+@keyframes bubble-pop {
+    0%   { transform: scale(0);    opacity: 0; }
+    60%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+}
+
+/* 선택된 버블 — 바깥 단일 링, 테마 배경의 반대색 */
+.bubble-selected > div {
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.65);
+}
+.dark .bubble-selected > div {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9);
+}
+
+/* 고정된 버블 — 버블 안쪽에 그려지는 링 (outline 음수 offset).
+   버블 가장자리와 링 사이에 버블 색이 드러난다.
+   outline과 box-shadow는 독립적이므로 선택 + 고정 동시 상태도 자동으로 처리된다. */
+/* outline-width, outline-offset은 BubbleLayer.setBubblePinned에서 반지름 비례로 설정 */
+.bubble-pinned > div {
+    outline-style: solid;
+    outline-color: rgba(255, 255, 255, 0.9);
+}
+.dark .bubble-pinned > div {
+    outline-color: rgba(0, 0, 0, 0.7);
+}
+
+/* 다중 선택된 팔레트 색상 슬롯 강조. 슬롯이 rounded-full이라 box-shadow ring이 원형 윤곽을 따라간다. */
+.swatch-selected {
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.95),
+        0 0 0 4px rgba(0, 0, 0, 0.55);
+}
+.dark .swatch-selected {
+    box-shadow:
+        0 0 0 2px rgba(0, 0, 0, 0.95),
+        0 0 0 4px rgba(255, 255, 255, 0.6);
+}
