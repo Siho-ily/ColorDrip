@@ -105,21 +105,23 @@ export default class PaletteColorDrag {
         if (!this.dragging) return;
         const { presetId, colorIds } = this.dragging;
 
-        if (this.dropType === 'reorder') {
-            const idSet = new Set(colorIds);
-            const allIds = this.getSlotEls().map(el => el.dataset.colorId!);
-            const remaining = allIds.filter(id => !idSet.has(id));
-            // 그룹은 현재 패널 순서를 유지한 채 insertIndex 위치에 통째로 삽입한다.
-            const group = allIds.filter(id => idSet.has(id));
-            remaining.splice(this.insertIndex, 0, ...group);
-            this.onReorder(presetId, remaining);
-        } else if (this.dropType === 'preset' && this.highlightedTab) {
-            this.onMoveToPreset(presetId, colorIds, this.highlightedTab.dataset.presetId!);
-        } else if (this.dropType === 'canvas') {
-            this.onDropToCanvas(presetId, colorIds, this.lastDropX, this.lastDropY);
+        try {
+            if (this.dropType === 'reorder') {
+                const idSet = new Set(colorIds);
+                const allIds = this.getSlotEls().map(el => el.dataset.colorId!);
+                const remaining = allIds.filter(id => !idSet.has(id));
+                // 그룹은 현재 패널 순서를 유지한 채 insertIndex 위치에 통째로 삽입한다.
+                const group = allIds.filter(id => idSet.has(id));
+                remaining.splice(this.insertIndex, 0, ...group);
+                this.onReorder(presetId, remaining);
+            } else if (this.dropType === 'preset' && this.highlightedTab) {
+                this.onMoveToPreset(presetId, colorIds, this.highlightedTab.dataset.presetId!);
+            } else if (this.dropType === 'canvas') {
+                this.onDropToCanvas(presetId, colorIds, this.lastDropX, this.lastDropY);
+            }
+        } finally {
+            this.cleanup();
         }
-
-        this.cleanup();
     };
 
     private readonly onKeyDown = (e: KeyboardEvent) => {

@@ -49,7 +49,7 @@ export function drawTeardrop(
  *  오른쪽으로 이동(vx > 0)하면 반시계 회전(-) → 꼬리가 오른쪽 위로 기울어짐. */
 export function rotationFromVelocity(vx: number, vy: number): number {
     if (vx === 0 && vy === 0) return 0;
-    return -Math.atan2(vx, vy);
+    return Math.atan2(vx, vy);
 }
 
 /** Matter.js body 하나와 그 시각 표현을 함께 관리하는 빗방울 단위 컴포넌트 */

@@ -8,7 +8,7 @@ export default class PresetPickerModal {
     private onSelect: ((presetId: string) => void) | null = null;
 
     private readonly keyHandler = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') this.close();
+        if (e.key === 'Escape') { e.stopPropagation(); this.close(); }
     };
 
     constructor() {

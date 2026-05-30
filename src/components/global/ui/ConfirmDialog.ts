@@ -9,7 +9,7 @@ export default class ConfirmDialog {
 
     private readonly keyHandler = (e: KeyboardEvent) => {
         if (e.key === 'Escape') { e.stopPropagation(); this.close(); }
-        if (e.key === 'Enter') { e.preventDefault(); this.confirm(); }
+        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); this.confirm(); }
     };
 
     constructor({ title, confirmLabel = '삭제', checkboxLabel = '다음부터 확인하지 않고 삭제하기', storageKey }: {

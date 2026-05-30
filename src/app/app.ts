@@ -193,7 +193,7 @@ export default class App {
             if (e.key === '?') { e.preventDefault(); this.shortcutHelp.toggle(); return; }
 
             // 컨텍스트 메뉴/도움말이 열려 있으면 액션 단축키는 무시한다.
-            if (this.state.contextMenu.open || this.shortcutHelp.isOpen()) return;
+            if (this.state.contextMenu.open || this.shortcutHelp.isOpen() || this.colorDeleteConfirm.isOpen || this.presetDeleteConfirm.isOpen) return;
 
             // ── 수식어(Cmd/Ctrl) 조합 ──
             if (mod) {

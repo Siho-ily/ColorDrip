@@ -73,6 +73,7 @@ export default class Marquee<ID> {
         const onUp = (e: PointerEvent) => {
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onUp);
             this.$box.classList.add('hidden');
 
             if (!moved) {
@@ -91,5 +92,6 @@ export default class Marquee<ID> {
 
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
     }
 }
