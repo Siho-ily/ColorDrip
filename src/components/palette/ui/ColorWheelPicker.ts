@@ -2,6 +2,7 @@ import chroma from 'chroma-js';
 import type { State } from "@/types/state";
 import type { HslColor } from "@/types/bubble";
 import type { ColorNotation } from "@/types/settings";
+import { createModalShell } from '@/lib/modalShell';
 
 /**
  * 색상 선택 모달. 표기 방식(notation)에 따라 입력 UI가 전환된다.
@@ -42,16 +43,14 @@ export default class ColorWheelPicker {
     }) {
         this.onPickerNotationChange = onPickerNotationChange;
 
-        this.$el = document.createElement('div');
-        this.$el.className = [
-            'fixed inset-0 z-[55] flex items-center justify-center hidden',
-            'bg-black/40 backdrop-blur-sm',
-        ].join(' ');
-        $target.appendChild(this.$el);
-
-        this.$card = document.createElement('div');
-        this.$card.className = 'bg-background border border-border rounded-xl shadow-xl p-5 w-64 flex flex-col gap-4';
-        this.$el.appendChild(this.$card);
+        const { $overlay, $card } = createModalShell({
+            $target,
+            zIndex: 'z-[55]',
+            cardSize: 'p-5 w-64 gap-4',
+            onBackdropClick: () => this.close(),
+        });
+        this.$el = $overlay;
+        this.$card = $card;
 
         // 헤더
         const $header = document.createElement('div');
@@ -94,11 +93,6 @@ export default class ColorWheelPicker {
             this.close();
         });
         this.$card.appendChild($confirmBtn);
-
-        // 배경 클릭으로 닫기
-        this.$el.addEventListener('click', (e) => {
-            if (e.target === this.$el) this.close();
-        });
 
         this.buildNotationSwitcher();
         this.buildInputs();

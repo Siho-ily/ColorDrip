@@ -1,4 +1,5 @@
 import { BackgroundLayer, Canvas, Palette, MenuBar, SettingsPanel, ShortcutHelp } from '@/components/index';
+import ConfirmDialog from '@/components/global/ui/ConfirmDialog';
 import CanvasAddButton from '@/components/canvas/CanvasAddButton';
 import type { State } from '@/types/state';
 import type { Preset, PresetColor } from '@/types/palette';
@@ -8,6 +9,9 @@ import BubbleContextMenu from '../components/ContextMenu/BubbleContextMenu';
 import SelectionContextMenu from '../components/ContextMenu/SelectionContextMenu';
 import { loadPaletteStore, savePaletteStore, createPreset } from '@/lib/paletteStorage';
 import { createPresetColor, mixColors } from '@/lib/color';
+import { updatePreset, updatePresetColors, moveColors } from '@/lib/presetOps';
+import { toggleId, mergeIds } from '@/lib/selection';
+import type { HslColor } from '@/types/bubble';
 import { radiusFromSize } from '@/data/constants';
 
 /** 우클릭 좌표를 ContextMenu의 anchor DOMRect로 변환 (1x1 박스) */
@@ -26,6 +30,8 @@ export default class App {
     private settingsPanel: SettingsPanel;
     private shortcutHelp: ShortcutHelp;
     private canvasAddButton: CanvasAddButton;
+    private colorDeleteConfirm: ConfirmDialog;
+    private presetDeleteConfirm: ConfirmDialog;
 
     constructor({ $app }: { $app: HTMLElement }) {
         const savedPalette = loadPaletteStore();
@@ -92,9 +98,7 @@ export default class App {
             onRenamePreset: (presetId, name) => this.setState({
                 palette: {
                     ...this.state.palette,
-                    presets: this.state.palette.presets.map(p =>
-                        p.id === presetId ? { ...p, name } : p
-                    ),
+                    presets: updatePreset(this.state.palette.presets, presetId, p => ({ ...p, name })),
                 },
             }),
             onDeletePreset: (presetId) => this.deletePreset(presetId),
@@ -151,6 +155,15 @@ export default class App {
             onClick: () => this.palette.openColorPicker((color) => this.canvas.spawnBubble(color)),
         });
 
+        this.colorDeleteConfirm = new ConfirmDialog({
+            title: '색상 삭제',
+            storageKey: 'colordrip:skipConfirmDeleteColors',
+        });
+        this.presetDeleteConfirm = new ConfirmDialog({
+            title: '프리셋 삭제',
+            storageKey: 'colordrip:skipConfirmDeletePreset',
+        });
+
         this.bindShortcuts();
 
         this.setState(this.state);
@@ -185,7 +198,7 @@ export default class App {
             // ── 수식어(Cmd/Ctrl) 조합 ──
             if (mod) {
                 switch (e.key.toLowerCase()) {
-                    case 'a': e.preventDefault(); this.selectAllBubbles(); return;
+                    case 'a': e.preventDefault(); this.state.palette.open ? this.selectAllColors() : this.selectAllBubbles(); return;
                     case 'd': e.preventDefault(); this.duplicateSelected(); return;
                     case 's': e.preventDefault(); this.saveSelectedToActivePreset(); return;
                     case ',': e.preventDefault(); this.menuBar.toggleSettings(); return;
@@ -230,8 +243,14 @@ export default class App {
                 }
                 case 'Delete':
                 case 'Backspace':
-                    if (this.state.selectedColorIds.length > 0) { e.preventDefault(); this.deleteSelectedColors(); }
-                    else if (this.state.selectedBubbleIds.length > 0) { e.preventDefault(); this.deleteSelected(); }
+                    if (this.state.selectedColorIds.length > 0) {
+                        e.preventDefault();
+                        const count = this.state.selectedColorIds.length;
+                        this.colorDeleteConfirm.open(
+                            `선택한 색상 ${count}개를 삭제할까요?`,
+                            () => this.deleteSelectedColors(),
+                        );
+                    } else if (this.state.selectedBubbleIds.length > 0) { e.preventDefault(); this.deleteSelected(); }
                     return;
                 case 'Enter':
                     if (this.state.selectedColorIds.length > 0) this.addSelectedColorsToCanvas();
@@ -312,12 +331,19 @@ export default class App {
     }
 
     private deletePreset(presetId: string) {
-        let presets = this.state.palette.presets.filter(p => p.id !== presetId);
-        if (presets.length === 0) presets = [createPreset('프리셋 1')];
-        const activePresetId = this.state.palette.activePresetId === presetId
-            ? presets[0].id
-            : this.state.palette.activePresetId;
-        this.setState({ palette: { ...this.state.palette, presets, activePresetId } });
+        const preset = this.state.palette.presets.find(p => p.id === presetId);
+        const name = preset?.name ?? '프리셋';
+        this.presetDeleteConfirm.open(
+            `'${name}'을(를) 삭제할까요?`,
+            () => {
+                let presets = this.state.palette.presets.filter(p => p.id !== presetId);
+                if (presets.length === 0) presets = [createPreset('프리셋 1')];
+                const activePresetId = this.state.palette.activePresetId === presetId
+                    ? presets[0].id
+                    : this.state.palette.activePresetId;
+                this.setState({ palette: { ...this.state.palette, presets, activePresetId } });
+            },
+        );
     }
 
     private saveToActivePreset(bubbleId: number) {
@@ -330,29 +356,22 @@ export default class App {
         this.setState({
             palette: {
                 ...this.state.palette,
-                presets: this.state.palette.presets.map(p => {
-                    if (p.id !== presetId) return p;
-                    const colorMap = new Map(p.colors.map(c => [c.id, c]));
-                    return {
-                        ...p,
-                        colors: newColorIds
-                            .map(id => colorMap.get(id))
-                            .filter((c): c is import('@/types/palette').PresetColor => c !== undefined),
-                    };
+                presets: updatePresetColors(this.state.palette.presets, presetId, colors => {
+                    const colorMap = new Map(colors.map(c => [c.id, c]));
+                    return newColorIds
+                        .map(id => colorMap.get(id))
+                        .filter((c): c is PresetColor => c !== undefined);
                 }),
             },
         });
     }
 
-    private editPresetColor(presetId: string, colorId: string, newColor: import('@/types/bubble').HslColor) {
+    private editPresetColor(presetId: string, colorId: string, newColor: HslColor) {
         this.setState({
             palette: {
                 ...this.state.palette,
-                presets: this.state.palette.presets.map(p =>
-                    p.id !== presetId ? p : {
-                        ...p,
-                        colors: p.colors.map(c => c.id !== colorId ? c : { ...c, color: newColor }),
-                    }
+                presets: updatePresetColors(this.state.palette.presets, presetId, colors =>
+                    colors.map(c => c.id === colorId ? { ...c, color: newColor } : c)
                 ),
             },
         });
@@ -362,8 +381,8 @@ export default class App {
         this.setState({
             palette: {
                 ...this.state.palette,
-                presets: this.state.palette.presets.map(p =>
-                    p.id !== presetId ? p : { ...p, colors: p.colors.filter(c => c.id !== colorId) }
+                presets: updatePresetColors(this.state.palette.presets, presetId, colors =>
+                    colors.filter(c => c.id !== colorId)
                 ),
             },
         });
@@ -373,53 +392,33 @@ export default class App {
         this.setState({
             palette: {
                 ...this.state.palette,
-                presets: this.state.palette.presets.map(p => {
-                    if (p.id !== presetId) return p;
-                    const idx = p.colors.findIndex(c => c.id === colorId);
-                    if (idx < 0) return p;
-                    const copy = { ...p.colors[idx], id: crypto.randomUUID() };
-                    const colors = [...p.colors];
-                    colors.splice(idx + 1, 0, copy);
-                    return { ...p, colors };
+                presets: updatePresetColors(this.state.palette.presets, presetId, colors => {
+                    const idx = colors.findIndex(c => c.id === colorId);
+                    if (idx < 0) return colors;
+                    const copy = { ...colors[idx], id: crypto.randomUUID() };
+                    const next = [...colors];
+                    next.splice(idx + 1, 0, copy);
+                    return next;
                 }),
             },
         });
     }
 
     private moveColorToPreset(fromPresetId: string, colorId: string, toPresetId: string) {
-        let moved: import('@/types/palette').PresetColor | undefined;
-        const presets = this.state.palette.presets
-            .map(p => {
-                if (p.id !== fromPresetId) return p;
-                moved = p.colors.find(c => c.id === colorId);
-                return { ...p, colors: p.colors.filter(c => c.id !== colorId) };
-            })
-            .map(p => {
-                if (p.id !== toPresetId || !moved) return p;
-                return { ...p, colors: [...p.colors, moved] };
-            });
+        const presets = moveColors(this.state.palette.presets, fromPresetId, toPresetId, [colorId]);
         this.setState({ palette: { ...this.state.palette, presets } });
     }
 
     // ── 팔레트 색상 다중 선택 (캔버스 버블 선택 로직 미러링) ──
 
     private toggleColorSelection(id: string, additive: boolean) {
-        if (additive) {
-            const prev = this.state.selectedColorIds;
-            const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-            this.setState({ selectedColorIds: next, selectedBubbleIds: [] });
-        } else {
-            this.setState({ selectedColorIds: [id], selectedBubbleIds: [] });
-        }
+        const next = additive ? toggleId(this.state.selectedColorIds, id) : [id];
+        this.setState({ selectedColorIds: next, selectedBubbleIds: [] });
     }
 
     private applyColorMarquee(ids: string[], additive: boolean) {
-        if (additive) {
-            const merged = Array.from(new Set([...this.state.selectedColorIds, ...ids]));
-            this.setState({ selectedColorIds: merged, selectedBubbleIds: [] });
-        } else {
-            this.setState({ selectedColorIds: ids, selectedBubbleIds: [] });
-        }
+        const next = additive ? mergeIds(this.state.selectedColorIds, ids) : ids;
+        this.setState({ selectedColorIds: next, selectedBubbleIds: [] });
     }
 
     private selectedColorsInActivePreset(): PresetColor[] {
@@ -445,8 +444,8 @@ export default class App {
         this.setState({
             palette: {
                 ...this.state.palette,
-                presets: this.state.palette.presets.map(p =>
-                    p.id !== activePresetId ? p : { ...p, colors: p.colors.filter(c => !idSet.has(c.id)) }
+                presets: updatePresetColors(this.state.palette.presets, activePresetId, colors =>
+                    colors.filter(c => !idSet.has(c.id))
                 ),
             },
             selectedColorIds: [],
@@ -462,18 +461,7 @@ export default class App {
     // 그룹 드래그/일괄 메뉴 공용. colorIds를 fromPreset에서 빼서 toPreset 끝에 붙인다.
     private moveColorsToPreset(fromPresetId: string, colorIds: string[], toPresetId: string) {
         if (fromPresetId === toPresetId || colorIds.length === 0) return;
-        const idSet = new Set(colorIds);
-        let moved: PresetColor[] = [];
-        const presets = this.state.palette.presets
-            .map(p => {
-                if (p.id !== fromPresetId) return p;
-                moved = p.colors.filter(c => idSet.has(c.id));
-                return { ...p, colors: p.colors.filter(c => !idSet.has(c.id)) };
-            })
-            .map(p => {
-                if (p.id !== toPresetId || moved.length === 0) return p;
-                return { ...p, colors: [...p.colors, ...moved] };
-            });
+        const presets = moveColors(this.state.palette.presets, fromPresetId, toPresetId, colorIds);
         this.setState({ palette: { ...this.state.palette, presets }, selectedColorIds: [] });
     }
 
@@ -516,22 +504,13 @@ export default class App {
     }
 
     private applyMarqueeSelection(ids: number[], additive: boolean) {
-        if (additive) {
-            const merged = Array.from(new Set([...this.state.selectedBubbleIds, ...ids]));
-            this.setState({ selectedBubbleIds: merged, selectedColorIds: [] });
-        } else {
-            this.setState({ selectedBubbleIds: ids, selectedColorIds: [] });
-        }
+        const next = additive ? mergeIds(this.state.selectedBubbleIds, ids) : ids;
+        this.setState({ selectedBubbleIds: next, selectedColorIds: [] });
     }
 
     private toggleBubbleSelection(id: number, additive: boolean) {
-        if (additive) {
-            const prev = this.state.selectedBubbleIds;
-            const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-            this.setState({ selectedBubbleIds: next, selectedColorIds: [] });
-        } else {
-            this.setState({ selectedBubbleIds: [id], selectedColorIds: [] });
-        }
+        const next = additive ? toggleId(this.state.selectedBubbleIds, id) : [id];
+        this.setState({ selectedBubbleIds: next, selectedColorIds: [] });
     }
 
     private openBubbleContextMenu(id: number, bubbleRect: DOMRect, point: { x: number; y: number }) {
@@ -582,6 +561,13 @@ export default class App {
         });
     }
 
+    private selectAllColors() {
+        const { activePresetId, presets } = this.state.palette;
+        const preset = presets.find(p => p.id === activePresetId);
+        if (!preset || preset.colors.length === 0) return;
+        this.setState({ selectedColorIds: preset.colors.map(c => c.id), selectedBubbleIds: [] });
+    }
+
     private selectAllBubbles() {
         if (this.state.bubbles.length === 0) return;
         this.setState({
@@ -621,14 +607,12 @@ export default class App {
         this.setState({
             palette: {
                 ...this.state.palette,
-                presets: presets.map(p =>
-                    p.id === activePresetId ? { ...p, colors: [...p.colors, ...newColors] } : p
-                ),
+                presets: updatePresetColors(presets, activePresetId, colors => [...colors, ...newColors]),
             },
         });
     }
 
-    private addColorToActivePreset(color: import('@/types/bubble').HslColor) {
+    private addColorToActivePreset(color: HslColor) {
         const { activePresetId, presets } = this.state.palette;
         if (!activePresetId) return;
 
@@ -636,11 +620,7 @@ export default class App {
         this.setState({
             palette: {
                 ...this.state.palette,
-                presets: presets.map(p =>
-                    p.id === activePresetId
-                        ? { ...p, colors: [...p.colors, presetColor] }
-                        : p
-                ),
+                presets: updatePresetColors(presets, activePresetId, colors => [...colors, presetColor]),
             },
         });
     }

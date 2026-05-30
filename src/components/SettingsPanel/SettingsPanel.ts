@@ -1,5 +1,6 @@
 import { animate } from 'motion';
 import type { Settings, ColorSpace, ColorNotation } from '@/types/settings';
+import { el } from '@/lib/dom';
 
 const COLOR_MIXING_SPACES: { value: ColorSpace; label: string }[] = [
     { value: 'oklch', label: 'OKLCH' },
@@ -232,10 +233,4 @@ export default class SettingsPanel {
         this.$el.appendChild(row);
     }
 
-}
-
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, styles: Partial<CSSStyleDeclaration>): HTMLElementTagNameMap[K] {
-    const node = document.createElement(tag);
-    Object.assign(node.style, styles);
-    return node;
 }

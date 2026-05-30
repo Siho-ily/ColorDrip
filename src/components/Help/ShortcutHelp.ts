@@ -1,4 +1,5 @@
 import { animate } from 'motion';
+import { el } from '@/lib/dom';
 
 /** 한 단축키 행: 키 캡(들) + 설명 */
 interface Shortcut {
@@ -190,10 +191,4 @@ export default class ShortcutHelp {
         cap.textContent = text;
         return cap;
     }
-}
-
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, styles: Partial<CSSStyleDeclaration>): HTMLElementTagNameMap[K] {
-    const node = document.createElement(tag);
-    Object.assign(node.style, styles);
-    return node;
 }
