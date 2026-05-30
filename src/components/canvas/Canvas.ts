@@ -102,25 +102,9 @@ export default class Canvas {
                 onBubbleCatch(bubble);
             },
             onEmptyPointerDown: (e) => {
+                // 우클릭은 contextmenu 이벤트에서 처리 — marquee를 시작하면
+                // pointerup에서 onEmptyClick이 호출되어 선택이 해제된다.
                 if (e.button === 2) return;
-                // RainCanvas의 canvas가 BubbleLayer 위에 있어 버블 div click이 도달하지 않는다.
-                // pointerdown 시점에 버블 히트 테스트를 직접 수행하고,
-                // pointerup까지 이동 거리가 임계값 미만이면 클릭으로 간주해 선택을 적용한다.
-                const hitId = this.bubbleLayer.getBubbleAtPoint(e.clientX, e.clientY);
-                if (hitId !== null) {
-                    const x0 = e.clientX, y0 = e.clientY;
-                    const additive = e.shiftKey;
-                    const onUp = (up: PointerEvent) => {
-                        window.removeEventListener('pointerup', onUp);
-                        window.removeEventListener('pointercancel', onUp);
-                        if (Math.hypot(up.clientX - x0, up.clientY - y0) < 5) {
-                            onBubbleClick(hitId, additive);
-                        }
-                    };
-                    window.addEventListener('pointerup', onUp);
-                    window.addEventListener('pointercancel', onUp);
-                    return;
-                }
                 this.bubbleCanvas.setMarqueeActive(true);
                 this.selectionLayer.startMarquee(e);
             },

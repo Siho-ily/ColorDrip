@@ -4,6 +4,9 @@ import type { ColorNotation } from '@/types/settings';
 import { formatColor } from '@/lib/color';
 import { showTooltip, hideTooltip, moveTooltip } from '@/components/global/ui/ColorTooltip';
 
+/** px. pointerdown~up 이동이 이 값 미만이면 드래그가 아닌 클릭(선택)으로 본다. */
+const CLICK_THRESHOLD = 5;
+
 /**
  * 버블의 시각적 렌더링을 담당하는 DOM 레이어.
  *
@@ -59,6 +62,27 @@ export default class BubbleLayer {
         }
         $outer.appendChild($inner);
 
+        // 버블 클릭 선택.
+        // drag 시작 시 liftBubble이 이 div를 document.body로 재부모화하므로 네이티브 click이
+        // 취소된다. 그래서 pointerdown 위치를 기록하고, 재부모화와 무관하게 발생하는
+        // window의 pointerup에서 이동 거리가 임계값 미만이면 클릭으로 간주해 선택을 적용한다.
+        $outer.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            const x0 = e.clientX, y0 = e.clientY, additive = e.shiftKey;
+            const cleanup = () => {
+                window.removeEventListener('pointerup', onUp);
+                window.removeEventListener('pointercancel', cleanup);
+            };
+            const onUp = (up: PointerEvent) => {
+                cleanup();
+                if (Math.hypot(up.clientX - x0, up.clientY - y0) < CLICK_THRESHOLD) {
+                    this.onBubbleClick(bubble.id, additive);
+                }
+            };
+            window.addEventListener('pointerup', onUp);
+            window.addEventListener('pointercancel', cleanup);
+        });
+
         $outer.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             this.onBubbleContextMenu(bubble.id, $outer.getBoundingClientRect(), { x: e.clientX, y: e.clientY });
@@ -105,16 +129,6 @@ export default class BubbleLayer {
             entry.$inner.style.outlineWidth  = this.pinRingWidth(newRadius);
             entry.$inner.style.outlineOffset = this.pinRingOffset(newRadius);
         }
-    }
-
-    getBubbleAtPoint(x: number, y: number): number | null {
-        for (const [id, entry] of this.bubbleMap) {
-            const rect = entry.$el.getBoundingClientRect();
-            const cx = rect.left + entry.radius;
-            const cy = rect.top + entry.radius;
-            if (Math.hypot(x - cx, y - cy) <= entry.radius) return id;
-        }
-        return null;
     }
 
     syncPositions(updates: { id: number; x: number; y: number }[]) {
