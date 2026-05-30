@@ -20,7 +20,7 @@ const initialState: State = {
         colorNotation: 'hex',
         pickerNotation: 'hex',
         darkMode: false,
-        rain: { speed: 10, density: 10, size: 5, wind: 2.5 },
+        rain: { speed: 10, density: 10, size: 4, wind: 0 },
         bubble: { size: 5 },
     },
     ui: {

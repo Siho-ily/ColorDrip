@@ -142,12 +142,6 @@ export default class SettingsPanel {
 
         this.appendSectionLabel('색상');
         this.appendSelect(
-            '혼합 방식',
-            COLOR_MIXING_SPACES,
-            this.settings.colorMixing,
-            v => this.emit({ colorMixing: v as ColorSpace }),
-        );
-        this.appendSelect(
             '표기 방식',
             COLOR_NOTATIONS,
             this.settings.colorNotation,
@@ -158,6 +152,12 @@ export default class SettingsPanel {
             COLOR_NOTATIONS,
             this.settings.pickerNotation,
             v => this.emit({ pickerNotation: v as ColorNotation }),
+        );
+        this.appendSelect(
+            '혼합 방식',
+            COLOR_MIXING_SPACES,
+            this.settings.colorMixing,
+            v => this.emit({ colorMixing: v as ColorSpace }),
         );
     }
 
