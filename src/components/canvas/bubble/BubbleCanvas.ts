@@ -213,16 +213,11 @@ export default class BubbleCanvas {
         Body.setStatic(body, true);
     }
 
-    /** 고정 해제 — 살짝 랜덤 velocity를 줘서 자연스럽게 떠돌기 시작 */
     unpinBubble(id: number) {
         this.pinnedIds.delete(id);
         const body = this.bodyMap.get(id);
         if (!body) return;
         Body.setStatic(body, false);
-        Body.setVelocity(body, {
-            x: (Math.random() - 0.5) * 2,
-            y: (Math.random() - 0.5) * 2,
-        });
     }
 
     private addWalls(width: number, height: number) {
