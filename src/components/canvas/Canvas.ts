@@ -226,6 +226,11 @@ export default class Canvas {
 
         this.state.bubbles.forEach(b => {
             this.bubbleLayer.setBubblePinned(b.id, b.pinned ?? false);
+
+            const prevBubble = prev.bubbles.find(pb => pb.id === b.id);
+            if (prevBubble && (prevBubble.color.h !== b.color.h || prevBubble.color.s !== b.color.s || prevBubble.color.l !== b.color.l)) {
+                this.bubbleLayer.setBubbleColor(b.id, b.color);
+            }
         });
     }
 }

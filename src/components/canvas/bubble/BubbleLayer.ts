@@ -145,6 +145,12 @@ export default class BubbleLayer {
         });
     }
 
+    setBubbleColor(id: number, color: { h: number; s: number; l: number }) {
+        const entry = this.bubbleMap.get(id);
+        if (!entry) return;
+        entry.$inner.style.backgroundColor = `hsl(${color.h}, ${color.s}%, ${color.l}%)`;
+    }
+
     setBubblePinned(id: number, pinned: boolean) {
         const entry = this.bubbleMap.get(id);
         if (!entry) return;
