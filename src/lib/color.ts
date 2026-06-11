@@ -43,8 +43,9 @@ export function mixColors(entries: ColorEntry[], colorSpace: ColorSpace): HslCol
     const [h, s, l] = chroma.average(colors, colorSpace, weights).hsl();
 
     // 무채색(흰색·검정·회색)은 hue가 수학적으로 정의되지 않아 NaN이 된다.
-    // 0으로 대체해 HslColor 타입 제약(number)을 만족시킨다.
-    return { h: h ?? 0, s: s * 100, l: l * 100 };
+    // NaN은 nullish가 아니라 `?? 0`으로 못 거르므로 isNaN으로 직접 처리해
+    // hsl(NaN, ...) 같은 깨진 CSS가 나오지 않게 0으로 대체한다.
+    return { h: isNaN(h) ? 0 : h, s: s * 100, l: l * 100 };
 }
 
 export function hslToHex(hsl: HslColor): string {
