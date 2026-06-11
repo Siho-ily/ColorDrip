@@ -115,7 +115,10 @@ export default class PaletteTabBar {
             };
             $input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') { e.preventDefault(); $input.blur(); }
-                if (e.key === 'Escape') { this.editingPresetId = null; $input.blur(); }
+                // Escape: 편집값을 원래 이름으로 되돌린 뒤 blur → commit이 원래 이름으로
+                // 커밋(실질 변경 없음)되며 리렌더되어 편집이 취소된다.
+                // 값을 되돌리지 않으면 blur→commit이 수정한 이름을 그대로 저장해 취소가 불가능하다.
+                if (e.key === 'Escape') { $input.value = preset.name; $input.blur(); }
             });
             $input.addEventListener('blur', commit);
             $tab.appendChild($input);
@@ -412,8 +415,11 @@ export default class PaletteTabBar {
             }
         };
 
-        $el.addEventListener('pointerup', commit);
-        $el.addEventListener('pointercancel', cancel);
+        // window에 등록: 임계값(6px/4px) 전에 포인터가 $el 밖에서 떼지면
+        // pointerup/cancel이 $el에 안 와 dragEl·scrollActive가 영구히 남는다.
+        // 두 핸들러 모두 dragEl/scrollActive 가드가 있어 무관한 pointerup엔 영향 없다.
+        window.addEventListener('pointerup', commit);
+        window.addEventListener('pointercancel', cancel);
 
         // pointerup 직후 click 이벤트가 발생한다.
         // 드래그였다면 click을 막아 탭 선택이 의도치 않게 트리거되는 것을 방지한다.

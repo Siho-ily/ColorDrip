@@ -61,6 +61,17 @@ export default class App {
             setState:   (next) => this.setState(next),
             onSaveToPreset: (bubbleId) => this.saveToActivePreset(bubbleId),
             onDuplicate: (bubbleId) => this.canvas.duplicateBubble(bubbleId),
+            onEditColor: (bubbleId) => {
+                const bubble = this.state.bubbles.find(b => b.id === bubbleId);
+                if (!bubble) return;
+                this.palette.openColorPicker((color) => {
+                    this.setState({
+                        bubbles: this.state.bubbles.map(b =>
+                            b.id === bubbleId ? { ...b, color } : b
+                        ),
+                    });
+                }, bubble.color);
+            },
         });
 
         this.selectionContextMenu = new SelectionContextMenu({

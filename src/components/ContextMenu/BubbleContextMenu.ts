@@ -13,6 +13,7 @@ export default class BubbleContextMenu {
     private readonly setState: (next: Partial<State>) => void;
     private readonly onSaveToPreset: (bubbleId: number) => void;
     private readonly onDuplicate: (bubbleId: number) => void;
+    private readonly onEditColor: (bubbleId: number) => void;
 
     constructor({
         onFreeze,
@@ -23,6 +24,7 @@ export default class BubbleContextMenu {
         setState,
         onSaveToPreset,
         onDuplicate,
+        onEditColor,
     }: {
         onFreeze: (id: number) => void;
         onUnfreeze: (id: number) => void;
@@ -32,6 +34,7 @@ export default class BubbleContextMenu {
         setState: (next: Partial<State>) => void;
         onSaveToPreset: (bubbleId: number) => void;
         onDuplicate: (bubbleId: number) => void;
+        onEditColor: (bubbleId: number) => void;
     }) {
         this.onFreeze = onFreeze;
         this.onUnfreeze = onUnfreeze;
@@ -41,6 +44,7 @@ export default class BubbleContextMenu {
         this.setState = setState;
         this.onSaveToPreset = onSaveToPreset;
         this.onDuplicate = onDuplicate;
+        this.onEditColor = onEditColor;
 
         this.menu = new ContextMenu({
             onClose: () => {
@@ -69,7 +73,7 @@ export default class BubbleContextMenu {
         return [
             buildCopyColorSubmenu(bubble.color),
             { kind: 'separator' },
-            { kind: 'action', id: 'edit-color',   label: '색상 편집',    onSelect: () => { /* TODO: open picker */ } },
+            { kind: 'action', id: 'edit-color',   label: '색상 편집',    onSelect: () => this.onEditColor(bubbleId) },
             { kind: 'action', id: 'save-palette', label: '팔레트에 저장', onSelect: () => this.onSaveToPreset(bubbleId) },
             { kind: 'action', id: 'duplicate',    label: '버블 복제',    onSelect: () => this.onDuplicate(bubbleId) },
             { kind: 'separator' },
