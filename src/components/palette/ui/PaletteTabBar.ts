@@ -14,6 +14,12 @@ export default class PaletteTabBar {
     private editingPresetId: string | null = null;
     private contextMenu: ContextMenu;
 
+    // 직전 render 인자. 편집 진입 시 직접 재렌더하기 위해 보관한다.
+    // (PaletteSidebar는 presets/activePresetId가 그대로면 재렌더를 건너뛰므로
+    //  editingPresetId만 바뀐 경우 tabBar가 스스로 다시 그려야 한다.)
+    private lastPresets: Preset[] = [];
+    private lastActiveId: string | null = null;
+
     private readonly onAddPreset: () => void;
     private readonly onSelectPreset: (presetId: string) => void;
     private readonly onRenamePreset: (presetId: string, name: string) => void;
@@ -57,6 +63,8 @@ export default class PaletteTabBar {
     }
 
     render(presets: Preset[], activePresetId: string | null) {
+        this.lastPresets = presets;
+        this.lastActiveId = activePresetId;
         this.$el.innerHTML = '';
 
         for (const preset of presets) {
@@ -73,6 +81,22 @@ export default class PaletteTabBar {
         $addBtn.title = '새 프리셋';
         $addBtn.addEventListener('click', () => this.onAddPreset());
         this.$el.appendChild($addBtn);
+    }
+
+    /**
+     * 프리셋 이름 편집 모드로 진입한다.
+     * 비활성 프리셋이면 onSelectPreset이 activePresetId를 바꿔 PaletteSidebar가
+     * 자동으로 tabBar.render를 호출하므로(편집 input도 함께 그려짐) 추가 렌더가 필요 없다.
+     * 이미 활성인 프리셋이면 activePresetId가 그대로라 PaletteSidebar가 재렌더를
+     * 건너뛰므로, 그 경우에만 직접 재렌더해 편집 input을 띄운다.
+     */
+    private startEditing(presetId: string) {
+        const isAlreadyActive = presetId === this.lastActiveId;
+        this.editingPresetId = presetId;
+        this.onSelectPreset(presetId);
+        if (isAlreadyActive) {
+            this.render(this.lastPresets, this.lastActiveId);
+        }
     }
 
     private buildTab(preset: Preset, isActive: boolean): HTMLDivElement {
@@ -136,12 +160,9 @@ export default class PaletteTabBar {
             this.onSelectPreset(preset.id);
         });
 
-        // 더블클릭: editingPresetId를 세팅하고 onSelectPreset을 호출한다.
-        // onSelectPreset → setState → render 흐름으로 리렌더가 트리거되면
-        // buildTab이 다시 실행될 때 editingPresetId === preset.id를 보고 input을 그린다.
+        // 더블클릭: 편집 모드로 진입한다.
         $tab.addEventListener('dblclick', () => {
-            this.editingPresetId = preset.id;
-            this.onSelectPreset(preset.id);
+            this.startEditing(preset.id);
         });
 
         $tab.addEventListener('contextmenu', (e) => {
@@ -151,10 +172,7 @@ export default class PaletteTabBar {
                     kind: 'action',
                     id: 'rename',
                     label: '이름 변경',
-                    onSelect: () => {
-                        this.editingPresetId = preset.id;
-                        this.onSelectPreset(preset.id);
-                    },
+                    onSelect: () => this.startEditing(preset.id),
                 },
                 { kind: 'action', id: 'duplicate', label: '복제', onSelect: () => this.onDuplicatePreset(preset.id) },
                 { kind: 'separator' },
