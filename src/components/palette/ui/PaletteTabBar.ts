@@ -341,6 +341,15 @@ export default class PaletteTabBar {
                 scrollStartTop = $el.scrollTop;
                 scrollActive = true;
             }
+
+            // 드래그/스크롤이 시작될 때만 window 종료 리스너를 등록한다.
+            // 임계값 전에 포인터가 $el 밖에서 떼져도 commit/cancel이 호출되어
+            // dragEl·scrollActive가 영구히 남지 않는다. 컴포넌트 수명과 무관한
+            // 전역 리스너를 상시 남기지 않도록 commit/cancel에서 다시 해제한다.
+            if (dragEl || scrollActive) {
+                window.addEventListener('pointerup', commit);
+                window.addEventListener('pointercancel', cancel);
+            }
         });
 
         $el.addEventListener('pointermove', (e) => {
@@ -396,8 +405,15 @@ export default class PaletteTabBar {
             }
         });
 
+        // 종료 리스너는 pointerdown(드래그/스크롤 시작) 때 등록하고 commit/cancel에서 해제한다.
+        const removeEndListeners = () => {
+            window.removeEventListener('pointerup', commit);
+            window.removeEventListener('pointercancel', cancel);
+        };
+
         // pointerup: 정상 종료 → 재정렬이면 새 순서를 커밋한다.
         const commit = (e: PointerEvent) => {
+            removeEndListeners();
             stopAutoScroll();
             if (dragEl) {
                 if ($el.hasPointerCapture(e.pointerId)) $el.releasePointerCapture(e.pointerId);
@@ -421,6 +437,7 @@ export default class PaletteTabBar {
 
         // pointercancel: 시스템이 중단(전화 알림 등) → 커밋 없이 원위치 복원
         const cancel = (e: PointerEvent) => {
+            removeEndListeners();
             stopAutoScroll();
             if (dragEl) {
                 if ($el.hasPointerCapture(e.pointerId)) $el.releasePointerCapture(e.pointerId);
@@ -432,12 +449,6 @@ export default class PaletteTabBar {
                 scrollActive = false;
             }
         };
-
-        // window에 등록: 임계값(6px/4px) 전에 포인터가 $el 밖에서 떼지면
-        // pointerup/cancel이 $el에 안 와 dragEl·scrollActive가 영구히 남는다.
-        // 두 핸들러 모두 dragEl/scrollActive 가드가 있어 무관한 pointerup엔 영향 없다.
-        window.addEventListener('pointerup', commit);
-        window.addEventListener('pointercancel', cancel);
 
         // pointerup 직후 click 이벤트가 발생한다.
         // 드래그였다면 click을 막아 탭 선택이 의도치 않게 트리거되는 것을 방지한다.

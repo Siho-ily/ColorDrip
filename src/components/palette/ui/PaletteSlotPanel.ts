@@ -125,12 +125,15 @@ export default class PaletteSlotPanel {
             $slot.addEventListener('pointerdown', (e) => {
                 if (e.button !== 0) return;
                 const startX = e.clientX, startY = e.clientY;
-                let dragging = false;
-
                 const onMove = (me: PointerEvent) => {
                     if (Math.hypot(me.clientX - startX, me.clientY - startY) < 5) return;
-                    dragging = true;
                     cleanup();
+                    // 드래그가 실제로 시작된 경우에만 click 방지 리스너를 등록한다.
+                    // (일반 클릭에선 등록하지 않아 불필요한 리스너 등록/해제 churn을 피한다)
+                    $slot.addEventListener('click', (ce) => {
+                        ce.stopImmediatePropagation();
+                        ce.preventDefault();
+                    }, { once: true, capture: true });
                     // 드래그한 슬롯이 선택에 포함되고 2개 이상 선택이면 선택 전체를 그룹으로 옮긴다.
                     const selected = this.getSelectedColorIds();
                     const group = selected.length > 1 && selected.includes(pc.id) ? selected : [pc.id];
@@ -144,11 +147,6 @@ export default class PaletteSlotPanel {
 
                 document.addEventListener('pointermove', onMove);
                 document.addEventListener('pointerup', onUp);
-
-                // 드래그가 일어났으면 click 이벤트를 막는다
-                $slot.addEventListener('click', (ce) => {
-                    if (dragging) { ce.stopImmediatePropagation(); ce.preventDefault(); }
-                }, { once: true, capture: true });
             });
 
             $slot.addEventListener('click', (e) => this.onColorSlotSelect(pc.id, e.shiftKey));

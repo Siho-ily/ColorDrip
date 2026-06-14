@@ -34,6 +34,12 @@ export default class ColorWheelPicker {
     private onColorSelect: ((color: HslColor) => void) | null = null;
     private readonly onPickerNotationChange: ((n: ColorNotation) => void) | undefined;
 
+    // 다른 모달(ConfirmDialog·PresetPickerModal)과 동일하게 Escape로 닫는다.
+    // open에서 등록, close에서 해제. 안정적 참조를 위해 화살표 필드로 보관.
+    private readonly onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') { e.stopPropagation(); this.close(); }
+    };
+
     constructor({
         $target,
         onPickerNotationChange,
@@ -268,11 +274,13 @@ export default class ColorWheelPicker {
         this.buildNotationSwitcher();
         this.buildInputs();
         this.updatePreview();
+        document.addEventListener('keydown', this.onKeyDown);
     }
 
     close() {
         this.$el.classList.add('hidden');
         this.onColorSelect = null;
+        document.removeEventListener('keydown', this.onKeyDown);
     }
 
     setState(state: State) {

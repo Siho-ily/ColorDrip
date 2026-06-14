@@ -39,15 +39,17 @@ export function moveColors(
 ): Preset[] {
     if (fromId === toId || ids.length === 0) return presets;
     const idSet = new Set(ids);
-    let moved: PresetColor[] = [];
-    return presets
-        .map(p => {
-            if (p.id !== fromId) return p;
-            moved = p.colors.filter(c => idSet.has(c.id));
-            return { ...p, colors: p.colors.filter(c => !idSet.has(c.id)) };
-        })
-        .map(p => {
-            if (p.id !== toId || moved.length === 0) return p;
-            return { ...p, colors: [...p.colors, ...moved] };
-        });
+
+    // 옮길 색을 먼저 확정한 뒤 단일 map으로 처리한다 (map 순서에 의존하는
+    // side-effect 없이 순수하게). from 프리셋이 없거나 옮길 색이 없으면 원본 반환.
+    const fromPreset = presets.find(p => p.id === fromId);
+    if (!fromPreset) return presets;
+    const moved = fromPreset.colors.filter(c => idSet.has(c.id));
+    if (moved.length === 0) return presets;
+
+    return presets.map(p => {
+        if (p.id === fromId) return { ...p, colors: p.colors.filter(c => !idSet.has(c.id)) };
+        if (p.id === toId)   return { ...p, colors: [...p.colors, ...moved] };
+        return p;
+    });
 }
