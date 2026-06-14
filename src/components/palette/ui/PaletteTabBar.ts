@@ -85,14 +85,18 @@ export default class PaletteTabBar {
 
     /**
      * 프리셋 이름 편집 모드로 진입한다.
-     * onSelectPreset으로 해당 프리셋을 선택하되, 이미 활성인 프리셋이면
-     * activePresetId가 그대로라 PaletteSidebar가 재렌더를 건너뛴다.
-     * 그래서 editingPresetId를 세팅한 뒤 직접 재렌더해 편집 input을 띄운다.
+     * 비활성 프리셋이면 onSelectPreset이 activePresetId를 바꿔 PaletteSidebar가
+     * 자동으로 tabBar.render를 호출하므로(편집 input도 함께 그려짐) 추가 렌더가 필요 없다.
+     * 이미 활성인 프리셋이면 activePresetId가 그대로라 PaletteSidebar가 재렌더를
+     * 건너뛰므로, 그 경우에만 직접 재렌더해 편집 input을 띄운다.
      */
     private startEditing(presetId: string) {
+        const isAlreadyActive = presetId === this.lastActiveId;
         this.editingPresetId = presetId;
         this.onSelectPreset(presetId);
-        this.render(this.lastPresets, this.lastActiveId);
+        if (isAlreadyActive) {
+            this.render(this.lastPresets, this.lastActiveId);
+        }
     }
 
     private buildTab(preset: Preset, isActive: boolean): HTMLDivElement {
