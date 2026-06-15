@@ -41,9 +41,12 @@ export function moveColors(
     const idSet = new Set(ids);
 
     // 옮길 색을 먼저 확정한 뒤 단일 map으로 처리한다 (map 순서에 의존하는
-    // side-effect 없이 순수하게). from 프리셋이 없거나 옮길 색이 없으면 원본 반환.
+    // side-effect 없이 순수하게). from/to 프리셋이 없거나 옮길 색이 없으면 원본 반환.
+    // to 프리셋을 함께 확인하지 않으면, to가 없을 때 from에서 색만 빠지고
+    // 어디에도 안 붙어 조용히 사라진다.
     const fromPreset = presets.find(p => p.id === fromId);
-    if (!fromPreset) return presets;
+    const toPreset = presets.find(p => p.id === toId);
+    if (!fromPreset || !toPreset) return presets;
     const moved = fromPreset.colors.filter(c => idSet.has(c.id));
     if (moved.length === 0) return presets;
 
