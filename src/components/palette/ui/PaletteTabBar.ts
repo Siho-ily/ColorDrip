@@ -14,6 +14,12 @@ export default class PaletteTabBar {
     private editingPresetId: string | null = null;
     private contextMenu: ContextMenu;
 
+    // 직전 render 인자. 편집 진입 시 직접 재렌더하기 위해 보관한다.
+    // (PaletteSidebar는 presets/activePresetId가 그대로면 재렌더를 건너뛰므로
+    //  editingPresetId만 바뀐 경우 tabBar가 스스로 다시 그려야 한다.)
+    private lastPresets: Preset[] = [];
+    private lastActiveId: string | null = null;
+
     private readonly onAddPreset: () => void;
     private readonly onSelectPreset: (presetId: string) => void;
     private readonly onRenamePreset: (presetId: string, name: string) => void;
@@ -57,6 +63,8 @@ export default class PaletteTabBar {
     }
 
     render(presets: Preset[], activePresetId: string | null) {
+        this.lastPresets = presets;
+        this.lastActiveId = activePresetId;
         this.$el.innerHTML = '';
 
         for (const preset of presets) {
@@ -73,6 +81,22 @@ export default class PaletteTabBar {
         $addBtn.title = '새 프리셋';
         $addBtn.addEventListener('click', () => this.onAddPreset());
         this.$el.appendChild($addBtn);
+    }
+
+    /**
+     * 프리셋 이름 편집 모드로 진입한다.
+     * 비활성 프리셋이면 onSelectPreset이 activePresetId를 바꿔 PaletteSidebar가
+     * 자동으로 tabBar.render를 호출하므로(편집 input도 함께 그려짐) 추가 렌더가 필요 없다.
+     * 이미 활성인 프리셋이면 activePresetId가 그대로라 PaletteSidebar가 재렌더를
+     * 건너뛰므로, 그 경우에만 직접 재렌더해 편집 input을 띄운다.
+     */
+    private startEditing(presetId: string) {
+        const isAlreadyActive = presetId === this.lastActiveId;
+        this.editingPresetId = presetId;
+        this.onSelectPreset(presetId);
+        if (isAlreadyActive) {
+            this.render(this.lastPresets, this.lastActiveId);
+        }
     }
 
     private buildTab(preset: Preset, isActive: boolean): HTMLDivElement {
@@ -136,12 +160,9 @@ export default class PaletteTabBar {
             this.onSelectPreset(preset.id);
         });
 
-        // 더블클릭: editingPresetId를 세팅하고 onSelectPreset을 호출한다.
-        // onSelectPreset → setState → render 흐름으로 리렌더가 트리거되면
-        // buildTab이 다시 실행될 때 editingPresetId === preset.id를 보고 input을 그린다.
+        // 더블클릭: 편집 모드로 진입한다.
         $tab.addEventListener('dblclick', () => {
-            this.editingPresetId = preset.id;
-            this.onSelectPreset(preset.id);
+            this.startEditing(preset.id);
         });
 
         $tab.addEventListener('contextmenu', (e) => {
@@ -151,10 +172,7 @@ export default class PaletteTabBar {
                     kind: 'action',
                     id: 'rename',
                     label: '이름 변경',
-                    onSelect: () => {
-                        this.editingPresetId = preset.id;
-                        this.onSelectPreset(preset.id);
-                    },
+                    onSelect: () => this.startEditing(preset.id),
                 },
                 { kind: 'action', id: 'duplicate', label: '복제', onSelect: () => this.onDuplicatePreset(preset.id) },
                 { kind: 'separator' },
@@ -323,6 +341,15 @@ export default class PaletteTabBar {
                 scrollStartTop = $el.scrollTop;
                 scrollActive = true;
             }
+
+            // 드래그/스크롤이 시작될 때만 window 종료 리스너를 등록한다.
+            // 임계값 전에 포인터가 $el 밖에서 떼져도 commit/cancel이 호출되어
+            // dragEl·scrollActive가 영구히 남지 않는다. 컴포넌트 수명과 무관한
+            // 전역 리스너를 상시 남기지 않도록 commit/cancel에서 다시 해제한다.
+            if (dragEl || scrollActive) {
+                window.addEventListener('pointerup', commit);
+                window.addEventListener('pointercancel', cancel);
+            }
         });
 
         $el.addEventListener('pointermove', (e) => {
@@ -378,8 +405,15 @@ export default class PaletteTabBar {
             }
         });
 
+        // 종료 리스너는 pointerdown(드래그/스크롤 시작) 때 등록하고 commit/cancel에서 해제한다.
+        const removeEndListeners = () => {
+            window.removeEventListener('pointerup', commit);
+            window.removeEventListener('pointercancel', cancel);
+        };
+
         // pointerup: 정상 종료 → 재정렬이면 새 순서를 커밋한다.
         const commit = (e: PointerEvent) => {
+            removeEndListeners();
             stopAutoScroll();
             if (dragEl) {
                 if ($el.hasPointerCapture(e.pointerId)) $el.releasePointerCapture(e.pointerId);
@@ -403,6 +437,7 @@ export default class PaletteTabBar {
 
         // pointercancel: 시스템이 중단(전화 알림 등) → 커밋 없이 원위치 복원
         const cancel = (e: PointerEvent) => {
+            removeEndListeners();
             stopAutoScroll();
             if (dragEl) {
                 if ($el.hasPointerCapture(e.pointerId)) $el.releasePointerCapture(e.pointerId);
@@ -414,12 +449,6 @@ export default class PaletteTabBar {
                 scrollActive = false;
             }
         };
-
-        // window에 등록: 임계값(6px/4px) 전에 포인터가 $el 밖에서 떼지면
-        // pointerup/cancel이 $el에 안 와 dragEl·scrollActive가 영구히 남는다.
-        // 두 핸들러 모두 dragEl/scrollActive 가드가 있어 무관한 pointerup엔 영향 없다.
-        window.addEventListener('pointerup', commit);
-        window.addEventListener('pointercancel', cancel);
 
         // pointerup 직후 click 이벤트가 발생한다.
         // 드래그였다면 click을 막아 탭 선택이 의도치 않게 트리거되는 것을 방지한다.
